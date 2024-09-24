@@ -44,6 +44,30 @@ fn main() {
             // Match against the specific regex
             if specific_todo_re.is_match(todo_content) {
                 println!("\tIs Valid: True");
+
+                if let Some(specific_cap) = specific_todo_re.captures(todo_content) {
+                    let delimiter_types = ["parens", "braces", "brackets", "angles"];
+                    let matched_delimiters: Vec<(&str, &str)> = delimiter_types
+                        .iter()
+                        .filter_map(|&delimiter_type| {
+                            specific_cap
+                                .name(delimiter_type)
+                                .map(|matched_content| (delimiter_type, matched_content.as_str()))
+                        })
+                        .collect();
+
+                    println!(
+                        "\tDelimiters Found: {:?}",
+                        matched_delimiters
+                            .iter()
+                            .map(|&(delimiter_type, _)| delimiter_type)
+                            .collect::<Vec<_>>()
+                    );
+
+                    for (delimiter_type, delimiter_content) in matched_delimiters {
+                        println!("\tContents of {}: {}", delimiter_type, delimiter_content);
+                    }
+                }
             } else {
                 println!("\tIs Valid: False");
             }
