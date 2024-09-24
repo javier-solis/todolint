@@ -5,8 +5,17 @@ fn main() {
     let filename = "src/main.rs";
     let contents = fs::read_to_string(filename).expect("Something went wrong reading the file");
 
-    // Regex to match any line that contains `// todo ... :`
-    let general_todo_re = Regex::new(r"//\s*todo.*:").unwrap();
+    // Regex to match any line that contains `// todo ... :` and capture the content
+    let todo_prefix = r"//\s*todo\s*";
+    let todo_content = r"(?<todo_content>.*?)";
+    let colon_separator = r"\s*:\s*";
+    let comment_content = r"(?<comment_content>.*)";
+
+    let general_todo_re = Regex::new(&format!(
+        r"{}{}{}{}",
+        todo_prefix, todo_content, colon_separator, comment_content
+    ))
+    .unwrap();
 
     // Regex to match correctly formatted 'todo' comments
     let keyword_pattern = r"[a-zA-Z0-9_-]+";
@@ -18,7 +27,7 @@ fn main() {
         r"(?:{}|{}|{}|{})",
         parens_pattern, braces_pattern, brackets_pattern, angles_pattern
     );
-    let specific_todo_re = Regex::new(&format!(r"//\s*todo{}{{0,3}}:", delimiter_pattern)).unwrap();
+    let specific_todo_re = Regex::new(&format!(r"^{}{{0,3}}$", delimiter_pattern)).unwrap();
 
     // Parse through file to match against the general regex
     for (line_number, line) in contents.lines().enumerate() {
