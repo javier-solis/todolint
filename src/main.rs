@@ -33,16 +33,21 @@ fn main() {
     for (line_number, line) in contents.lines().enumerate() {
         if let Some(general_cap) = general_todo_re.captures(line) {
             let todo_comment = &general_cap[0];
+            let todo_content = &general_cap["todo_content"];
+            let comment_content = &general_cap["comment_content"];
+
+            println!("'todo' on line {}:", line_number + 1);
+            println!("\tFull text: {}", todo_comment);
+            println!("\tTodo content: {}", todo_content);
+            println!("\tComment content: {}", comment_content);
+
             // Match against the specific regex
-            if specific_todo_re.is_match(todo_comment) {
-                println!("'todo' with valid format on line {}:", line_number + 1);
-                println!("\tFull text: {}", todo_comment);
-                println!("\n");
+            if specific_todo_re.is_match(todo_content) {
+                println!("\tIs Valid: True");
             } else {
-                println!("'todo' with invalid format on line {}:", line_number + 1);
-                println!("\tFull text: {}", todo_comment);
-                println!("\n");
+                println!("\tIs Valid: False");
             }
+            println!("\n");
         }
     }
 }
