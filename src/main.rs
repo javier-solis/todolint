@@ -7,6 +7,10 @@ use std::{
 
 fn main() -> Result<()> {
     let filename = "src/main.rs";
+    analyze_file(filename)
+}
+
+fn analyze_file(filename: &str) -> Result<()> {
     let file = File::open(filename).context("Failed to open file")?;
     let reader = BufReader::new(file);
 
@@ -96,4 +100,4 @@ fn create_specific_todo_regex() -> Result<Regex> {
         .context("Failed to create specific todo regex")
 }
 
-// todo<1>{2}(3)[4]: test comment
+// todo<1>{2}(3)   [4]: test comment
