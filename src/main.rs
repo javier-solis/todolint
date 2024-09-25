@@ -4,6 +4,8 @@ use std::{
     fs::File,
     io::{BufRead, BufReader},
 };
+mod types;
+use types::{Delimiter, TodoComment, TodoCommentResult};
 
 fn main() -> Result<()> {
     let filename = "src/main.rs";
@@ -24,22 +26,6 @@ fn analyze_file(filename: &str) -> Result<()> {
     }
 
     Ok(())
-}
-
-struct TodoComment {
-    line: usize,
-    comment: String,
-    delimiters: Vec<Delimiter>,
-}
-
-struct Delimiter {
-    delimiter_type: String,
-    content: String,
-}
-
-enum TodoCommentResult {
-    Valid(TodoComment),
-    Invalid { line: usize, full_text: String },
 }
 
 fn process_line(
