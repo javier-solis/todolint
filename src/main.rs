@@ -8,50 +8,53 @@ fn main() {
     let general_todo_re = create_general_todo_regex();
     let specific_todo_re = create_specific_todo_regex();
 
-    // Parse through file to match against the general regex
     for (line_number, line) in contents.lines().enumerate() {
-        if let Some(general_cap) = general_todo_re.captures(line) {
-            let todo_comment = &general_cap[0];
-            let todo_content = &general_cap["todo_content"];
-            let comment_content = &general_cap["comment_content"];
+        process_line(&line, line_number, &general_todo_re, &specific_todo_re);
+    }
+}
 
-            println!("'todo' on line {}:", line_number + 1);
-            println!("\tFull text: {}", todo_comment);
-            println!("\tTodo content: {}", todo_content);
-            println!("\tComment content: {}", comment_content);
+fn process_line(line: &str, line_number: usize, general_re: &Regex, specific_re: &Regex) {
+    if let Some(general_cap) = general_re.captures(line) {
+        let todo_comment = &general_cap[0];
+        let todo_content = &general_cap["todo_content"];
+        let comment_content = &general_cap["comment_content"];
 
-            // Match against the specific regex
-            if specific_todo_re.is_match(todo_content) {
-                println!("\tIs Valid: True");
+        println!("'todo' on line {}:", line_number + 1);
+        println!("\tFull text: {}", todo_comment);
+        println!("\tTodo content: {}", todo_content);
+        println!("\tComment content: {}", comment_content);
 
-                if let Some(specific_cap) = specific_todo_re.captures(todo_content) {
-                    let delimiter_types = ["parens", "braces", "brackets", "angles"];
-                    let matched_delimiters: Vec<(&str, &str)> = delimiter_types
+        // Match against the specific regex
+        if specific_re.is_match(todo_content) {
+            println!("\tIs Valid: True");
+
+            if let Some(specific_cap) = specific_re.captures(todo_content) {
+                let delimiter_types = ["parens", "braces", "brackets", "angles"];
+                let matched_delimiters: Vec<(&str, &str)> = delimiter_types
+                    .iter()
+                    .filter_map(|&delimiter_type| {
+                        specific_cap
+                            .name(delimiter_type)
+                            .map(|matched_content| (delimiter_type, matched_content.as_str()))
+                    })
+                    .collect();
+
+                println!(
+                    "\tDelimiters Found: {:?}",
+                    matched_delimiters
                         .iter()
-                        .filter_map(|&delimiter_type| {
-                            specific_cap
-                                .name(delimiter_type)
-                                .map(|matched_content| (delimiter_type, matched_content.as_str()))
-                        })
-                        .collect();
+                        .map(|&(delimiter_type, _)| delimiter_type)
+                        .collect::<Vec<_>>()
+                );
 
-                    println!(
-                        "\tDelimiters Found: {:?}",
-                        matched_delimiters
-                            .iter()
-                            .map(|&(delimiter_type, _)| delimiter_type)
-                            .collect::<Vec<_>>()
-                    );
-
-                    for (delimiter_type, delimiter_content) in matched_delimiters {
-                        println!("\tContents of {}: {}", delimiter_type, delimiter_content);
-                    }
+                for (delimiter_type, delimiter_content) in matched_delimiters {
+                    println!("\tContents of {}: {}", delimiter_type, delimiter_content);
                 }
-            } else {
-                println!("\tIs Valid: False");
             }
-            println!("\n");
+        } else {
+            println!("\tIs Valid: False");
         }
+        println!("\n");
     }
 }
 
