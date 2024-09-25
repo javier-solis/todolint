@@ -25,7 +25,28 @@ fn analyze_file(filename: &str) -> Result<()> {
     Ok(())
 }
 
-fn process_line(line: &str, line_number: usize, general_re: &Regex, specific_re: &Regex) {
+struct TodoComment {
+    line: usize,
+    comment: String,
+    delimiters: Vec<Delimiter>,
+}
+
+struct Delimiter {
+    delimiter_type: String,
+    content: String,
+}
+
+enum TodoCommentResult {
+    Valid(TodoComment),
+    Invalid { line: usize, content: String },
+}
+
+fn process_line(
+    line: &str,
+    line_number: usize,
+    general_re: &Regex,
+    specific_re: &Regex,
+) -> Option<TodoCommentResult> {
     if let Some(general_cap) = general_re.captures(line) {
         let todo_comment = &general_cap[0];
         let todo_content = &general_cap["todo_content"];
@@ -36,9 +57,10 @@ fn process_line(line: &str, line_number: usize, general_re: &Regex, specific_re:
         println!("\tTodo content: {}", todo_content);
         println!("\tComment content: {}", comment_content);
 
-        // Match against the specific regex
         if specific_re.is_match(todo_content) {
             println!("\tIs Valid: True");
+
+            let mut delimiters = Vec::new();
 
             if let Some(specific_cap) = specific_re.captures(todo_content) {
                 let delimiter_types = ["parens", "braces", "brackets", "angles"];
@@ -61,12 +83,27 @@ fn process_line(line: &str, line_number: usize, general_re: &Regex, specific_re:
 
                 for (delimiter_type, delimiter_content) in matched_delimiters {
                     println!("\tContents of {}: {}", delimiter_type, delimiter_content);
+                    delimiters.push(Delimiter {
+                        delimiter_type: delimiter_type.to_string(),
+                        content: delimiter_content.to_string(),
+                    });
                 }
             }
+
+            Some(TodoCommentResult::Valid(TodoComment {
+                line: line_number + 1,
+                comment: comment_content.to_string(),
+                delimiters,
+            }))
         } else {
             println!("\tIs Valid: False");
+            Some(TodoCommentResult::Invalid {
+                line: line_number + 1,
+                content: todo_content.to_string(),
+            })
         }
-        println!("\n");
+    } else {
+        None
     }
 }
 
