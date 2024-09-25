@@ -92,7 +92,7 @@ fn create_specific_todo_regex() -> Result<Regex> {
         parens_pattern, braces_pattern, brackets_pattern, angles_pattern
     );
 
-    Regex::new(&format!(r"^{}{{0,3}}$", delimiter_pattern))
+    Regex::new(&format!(r"^{}{{0,4}}$", delimiter_pattern))
         .context("Failed to create specific todo regex")
 }
 
