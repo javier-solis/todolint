@@ -1,14 +1,19 @@
 use regex::Regex;
-use std::fs;
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
 fn main() {
     let filename = "src/main.rs";
-    let contents = fs::read_to_string(filename).expect("Something went wrong reading the file");
+    let file = File::open(filename).expect("Failed to open file");
+    let reader = BufReader::new(file);
 
     let general_todo_re = create_general_todo_regex();
     let specific_todo_re = create_specific_todo_regex();
 
-    for (line_number, line) in contents.lines().enumerate() {
+    for (line_number, line) in reader.lines().enumerate() {
+        let line = line.expect("Failed to read line");
         process_line(&line, line_number, &general_todo_re, &specific_todo_re);
     }
 }
@@ -86,3 +91,5 @@ fn create_specific_todo_regex() -> Regex {
 
     Regex::new(&format!(r"^{}{{0,3}}$", delimiter_pattern)).unwrap()
 }
+
+// todo:
