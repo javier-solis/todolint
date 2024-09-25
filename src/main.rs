@@ -19,7 +19,8 @@ fn analyze_file(filename: &str) -> Result<()> {
 
     for (line_number, line) in reader.lines().enumerate() {
         let line = line.context("Failed to read line")?;
-        process_line(&line, line_number, &general_todo_re, &specific_todo_re);
+        let processed_line = process_line(&line, line_number, &general_todo_re, &specific_todo_re);
+        print_todo_result(&processed_line);
     }
 
     Ok(())
@@ -38,7 +39,7 @@ struct Delimiter {
 
 enum TodoCommentResult {
     Valid(TodoComment),
-    Invalid { line: usize, content: String },
+    Invalid { line: usize, full_text: String },
 }
 
 fn process_line(
@@ -48,18 +49,10 @@ fn process_line(
     specific_re: &Regex,
 ) -> Option<TodoCommentResult> {
     if let Some(general_cap) = general_re.captures(line) {
-        let todo_comment = &general_cap[0];
         let todo_content = &general_cap["todo_content"];
         let comment_content = &general_cap["comment_content"];
 
-        println!("'todo' on line {}:", line_number + 1);
-        println!("\tFull text: {}", todo_comment);
-        println!("\tTodo content: {}", todo_content);
-        println!("\tComment content: {}", comment_content);
-
         if specific_re.is_match(todo_content) {
-            println!("\tIs Valid: True");
-
             let mut delimiters = Vec::new();
 
             if let Some(specific_cap) = specific_re.captures(todo_content) {
@@ -73,16 +66,7 @@ fn process_line(
                     })
                     .collect();
 
-                println!(
-                    "\tDelimiters Found: {:?}",
-                    matched_delimiters
-                        .iter()
-                        .map(|&(delimiter_type, _)| delimiter_type)
-                        .collect::<Vec<_>>()
-                );
-
                 for (delimiter_type, delimiter_content) in matched_delimiters {
-                    println!("\tContents of {}: {}", delimiter_type, delimiter_content);
                     delimiters.push(Delimiter {
                         delimiter_type: delimiter_type.to_string(),
                         content: delimiter_content.to_string(),
@@ -96,14 +80,45 @@ fn process_line(
                 delimiters,
             }))
         } else {
-            println!("\tIs Valid: False");
             Some(TodoCommentResult::Invalid {
                 line: line_number + 1,
-                content: todo_content.to_string(),
+                full_text: general_cap[0].to_string(),
             })
         }
     } else {
         None
+    }
+}
+
+fn print_todo_result(result: &Option<TodoCommentResult>) {
+    if let Some(todo_result) = result {
+        match todo_result {
+            TodoCommentResult::Valid(todo_comment) => {
+                println!("'todo' on line {}:", todo_comment.line);
+                println!("\tIs Valid: True");
+                println!("\tComment content: {}", todo_comment.comment);
+                println!(
+                    "\tDelimiters Found: {:?}",
+                    todo_comment
+                        .delimiters
+                        .iter()
+                        .map(|d| d.delimiter_type.as_str())
+                        .collect::<Vec<_>>()
+                );
+                for delimiter in &todo_comment.delimiters {
+                    println!(
+                        "\tContents of {}: {}",
+                        delimiter.delimiter_type, delimiter.content
+                    );
+                }
+            }
+            TodoCommentResult::Invalid { line, full_text } => {
+                println!("'todo' on line {}:", line);
+                println!("\tIs Valid: False");
+                println!("\tFull text: {}", full_text);
+            }
+        }
+        println!("\n");
     }
 }
 
