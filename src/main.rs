@@ -1,21 +1,24 @@
+use anyhow::{Context, Result};
 use regex::Regex;
 use std::{
     fs::File,
     io::{BufRead, BufReader},
 };
 
-fn main() {
+fn main() -> Result<()> {
     let filename = "src/main.rs";
-    let file = File::open(filename).expect("Failed to open file");
+    let file = File::open(filename).context("Failed to open file")?;
     let reader = BufReader::new(file);
 
-    let general_todo_re = create_general_todo_regex();
-    let specific_todo_re = create_specific_todo_regex();
+    let general_todo_re = create_general_todo_regex()?;
+    let specific_todo_re = create_specific_todo_regex()?;
 
     for (line_number, line) in reader.lines().enumerate() {
-        let line = line.expect("Failed to read line");
+        let line = line.context("Failed to read line")?;
         process_line(&line, line_number, &general_todo_re, &specific_todo_re);
     }
+
+    Ok(())
 }
 
 fn process_line(line: &str, line_number: usize, general_re: &Regex, specific_re: &Regex) {
@@ -63,7 +66,7 @@ fn process_line(line: &str, line_number: usize, general_re: &Regex, specific_re:
     }
 }
 
-fn create_general_todo_regex() -> Regex {
+fn create_general_todo_regex() -> Result<Regex> {
     let todo_prefix = r"//\s*todo\s*";
     let todo_content = r"(?<todo_content>.*?)";
     let colon_separator = r"\s*:\s*";
@@ -73,10 +76,10 @@ fn create_general_todo_regex() -> Regex {
         r"{}{}{}{}",
         todo_prefix, todo_content, colon_separator, comment_content
     ))
-    .unwrap()
+    .context("Failed to create general todo regex")
 }
 
-fn create_specific_todo_regex() -> Regex {
+fn create_specific_todo_regex() -> Result<Regex> {
     let keyword_pattern = r"[a-zA-Z0-9_-]+";
 
     let parens_pattern = format!(r"\((?<parens>{})\)", keyword_pattern);
@@ -89,7 +92,8 @@ fn create_specific_todo_regex() -> Regex {
         parens_pattern, braces_pattern, brackets_pattern, angles_pattern
     );
 
-    Regex::new(&format!(r"^{}{{0,3}}$", delimiter_pattern)).unwrap()
+    Regex::new(&format!(r"^{}{{0,3}}$", delimiter_pattern))
+        .context("Failed to create specific todo regex")
 }
 
-// todo:
+// todo<1>{2}(3)[4]: test comment
