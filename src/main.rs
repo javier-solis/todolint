@@ -100,4 +100,14 @@ fn create_specific_todo_regex() -> Result<Regex> {
         .context("Failed to create specific todo regex")
 }
 
-// todo<1>{2}(3)   [4]: test comment
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_analyze_file() {
+        let test_file = "test/valid.txt";
+        let result = analyze_file(test_file);
+        assert!(result.is_ok());
+    }
+}
