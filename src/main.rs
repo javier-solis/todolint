@@ -5,6 +5,7 @@ use std::{
     io::{BufRead, BufReader},
 };
 mod types;
+use serde_json;
 use types::{Delimiter, TodoComment, TodoCommentResult};
 
 fn main() -> Result<()> {
@@ -23,9 +24,17 @@ fn analyze_file(filename: &str) -> Result<()> {
         let line = line.context("Failed to read line")?;
         let processed_line = process_line(&line, line_number, &general_todo_re, &specific_todo_re);
         print_todo_result(&processed_line);
+        print_todo_result_json(&processed_line);
     }
 
     Ok(())
+}
+
+fn print_todo_result_json(result: &Option<TodoCommentResult>) {
+    if let Some(todo_result) = result {
+        let json = serde_json::to_string_pretty(todo_result).unwrap();
+        println!("{}\n", json);
+    }
 }
 
 fn process_line(
