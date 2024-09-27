@@ -1,4 +1,18 @@
+use std::time::SystemTime;
+
 use serde::Serialize;
+
+#[derive(Serialize, Debug)]
+pub struct FileAnalysis {
+    pub metadata: FileMetadata,
+    pub valids: Vec<TodoComment>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct FileMetadata {
+    pub filepath: String,
+    pub last_modified: SystemTime,
+}
 
 #[derive(Serialize, Debug)]
 pub struct TodoComment {
