@@ -8,6 +8,7 @@ use utils::{print_todo_result, print_todo_result_json};
 mod types;
 use types::{Delimiter, FileAnalysis, FileMetadata, TodoComment, TodoCommentResult};
 mod utils;
+extern crate chrono;
 
 fn main() -> Result<()> {
     Ok(())
@@ -24,7 +25,7 @@ fn analyze_file(filename: &str) -> Result<FileAnalysis> {
     let mut file_analysis = FileAnalysis {
         metadata: FileMetadata {
             filepath: filename.to_string(),
-            last_modified: metadata.modified()?,
+            last_modified: metadata.modified()?.into(),
         },
         valids: Vec::new(),
     };

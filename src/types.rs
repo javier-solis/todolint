@@ -1,4 +1,4 @@
-use std::time::SystemTime;
+use chrono::{DateTime, Utc};
 
 use serde::Serialize;
 
@@ -11,7 +11,7 @@ pub struct FileAnalysis {
 #[derive(Serialize, Debug)]
 pub struct FileMetadata {
     pub filepath: String,
-    pub last_modified: SystemTime,
+    pub last_modified: DateTime<Utc>,
 }
 
 #[derive(Serialize, Debug)]
