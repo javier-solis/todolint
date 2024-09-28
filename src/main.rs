@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use chrono::Utc;
 use regex::Regex;
 use std::{
     fs::File,
@@ -6,12 +7,37 @@ use std::{
 };
 use utils::{print_todo_result, print_todo_result_json};
 mod types;
-use types::{Delimiter, FileAnalysis, FileMetadata, TodoComment, TodoCommentResult};
+use types::{
+    Delimiter, DirectoryAnalysis, FileAnalysis, FileMetadata, TodoComment, TodoCommentResult,
+};
 mod utils;
+use std::path::Path;
+use walkdir::WalkDir;
+
 extern crate chrono;
 
 fn main() -> Result<()> {
     Ok(())
+}
+
+fn analyze_dir(dir: &Path) -> DirectoryAnalysis {
+    let file_analyses: Vec<FileAnalysis> = WalkDir::new(dir)
+        .into_iter()
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.file_type().is_file())
+        .filter_map(|entry| {
+            let path = entry.path();
+            analyze_file(path.to_str()?).ok()
+        })
+        .collect();
+
+    let total_files_scanned = file_analyses.len();
+
+    DirectoryAnalysis {
+        total_files_scanned,
+        last_scan_on: Utc::now(),
+        file_analyses,
+    }
 }
 
 fn analyze_file(filename: &str) -> Result<FileAnalysis> {
@@ -129,8 +155,8 @@ mod tests {
 
     #[test]
     fn test_analyze_file() -> Result<()> {
-        let test_file = "test/valid.txt";
-        let result = analyze_file(test_file)?;
+        let test_dir = Path::new("test");
+        let result = analyze_dir(test_dir);
 
         let json = serde_json::to_string_pretty(&result)?;
         println!("{}", json);

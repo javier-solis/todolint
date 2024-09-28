@@ -3,6 +3,13 @@ use chrono::{DateTime, Utc};
 use serde::Serialize;
 
 #[derive(Serialize, Debug)]
+pub struct DirectoryAnalysis {
+    pub total_files_scanned: usize,
+    pub last_scan_on: DateTime<Utc>,
+    pub file_analyses: Vec<FileAnalysis>,
+}
+
+#[derive(Serialize, Debug)]
 pub struct FileAnalysis {
     pub metadata: FileMetadata,
     pub valids: Vec<TodoComment>,
