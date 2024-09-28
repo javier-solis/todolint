@@ -8,7 +8,8 @@ use std::{
 use utils::{print_todo_result, print_todo_result_json};
 mod types;
 use types::{
-    Delimiter, DirectoryAnalysis, FileAnalysis, FileMetadata, TodoComment, TodoCommentResult,
+    Delimiter, DirectoryAnalysis, FileAnalysis, FileMetadata, InvalidTodoComment, TodoComment,
+    TodoCommentResult,
 };
 mod utils;
 use std::path::Path;
@@ -54,17 +55,21 @@ fn analyze_file(filename: &str) -> Result<FileAnalysis> {
             last_modified: metadata.modified()?.into(),
         },
         valids: Vec::new(),
+        invalids: Vec::new(),
     };
 
     for (line_number, line) in reader.lines().enumerate() {
         let line = line.context("Failed to read line")?;
         let processed_line = process_line(&line, line_number, &general_todo_re, &specific_todo_re);
 
-        // print_todo_result(&processed_line);
-        // print_todo_result_json(&processed_line);
-
-        if let Some(TodoCommentResult::Valid(todo_comment)) = processed_line {
-            file_analysis.valids.push(todo_comment);
+        match processed_line {
+            Some(TodoCommentResult::Valid(comment)) => {
+                file_analysis.valids.push(comment);
+            }
+            Some(TodoCommentResult::Invalid(comment)) => {
+                file_analysis.invalids.push(comment);
+            }
+            None => {}
         }
     }
 
@@ -109,10 +114,10 @@ fn process_line(
                 delimiters,
             }))
         } else {
-            Some(TodoCommentResult::Invalid {
+            Some(TodoCommentResult::Invalid(InvalidTodoComment {
                 line: line_number + 1,
                 full_text: general_cap[0].to_string(),
-            })
+            }))
         }
     } else {
         None
