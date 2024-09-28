@@ -159,13 +159,31 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_analyze_file() -> Result<()> {
+    fn test_analyze_dir() -> Result<()> {
         let test_dir = Path::new("test");
         let result = analyze_dir(test_dir);
 
         let json = serde_json::to_string_pretty(&result)?;
         println!("{}", json);
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_analyze_file_valid() -> Result<()> {
+        let filename = "test/valid.txt";
+        let analysis = analyze_file(filename)?;
+
+        assert_eq!(analysis.invalids.len(), 0, "Expected no invalid todos");
+        Ok(())
+    }
+
+    #[test]
+    fn test_analyze_file_invalid() -> Result<()> {
+        let filename = "test/invalid.txt";
+        let analysis = analyze_file(filename)?;
+
+        assert_eq!(analysis.valids.len(), 0, "Expected no valid todos");
         Ok(())
     }
 }
