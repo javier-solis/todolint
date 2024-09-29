@@ -153,10 +153,10 @@ fn create_specific_todo_regex() -> Result<Regex> {
     Regex::new(&format!(r"^{}{{0,4}}$", delimiter_pattern))
         .context("Failed to create specific todo regex")
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::rstest;
 
     #[test]
     fn test_analyze_dir() -> Result<()> {
@@ -187,38 +187,44 @@ mod tests {
         Ok(())
     }
 
-    fn test_process_lines(filename: &str, expected_variant: &str) -> Result<()> {
-        let general_todo_re = create_general_todo_regex()?;
-        let file = File::open(filename)?;
+    fn read_test_file(filename: &str) -> Vec<String> {
+        let file = File::open(filename).unwrap();
         let reader = BufReader::new(file);
+        reader.lines().map(|l| l.unwrap()).collect()
+    }
 
-        for (line_number, line) in reader.lines().enumerate() {
-            let line = line?;
-            let result = process_line(&line, line_number, &general_todo_re);
+    #[rstest]
+    #[case::valid(read_test_file("test/valid.txt"), true)]
+    #[case::invalid(read_test_file("test/invalid.txt"), false)]
+    fn test_process_line(#[case] lines: Vec<String>, #[case] is_valid: bool) {
+        let general_todo_re = create_general_todo_regex().unwrap();
+
+        for (index, line) in lines.iter().enumerate() {
+            let result = process_line(line, index, &general_todo_re);
 
             assert!(
                 result.is_some(),
                 "Expected Some result for line {}",
-                line_number + 1
+                index + 1
             );
 
-            match expected_variant {
-                "Valid" => assert!(matches!(result, Some(TodoCommentResult::Valid(_)))),
-                "Invalid" => assert!(matches!(result, Some(TodoCommentResult::Invalid(_)))),
-                _ => panic!("Unexpected variant type"),
+            if is_valid {
+                assert!(
+                    matches!(result, Some(TodoCommentResult::Valid(_))),
+                    "Expected Valid but got {:?} for line {}: {}",
+                    result,
+                    index + 1,
+                    line
+                );
+            } else {
+                assert!(
+                    matches!(result, Some(TodoCommentResult::Invalid(_))),
+                    "Expected Invalid but got {:?} for line {}: {}",
+                    result,
+                    index + 1,
+                    line
+                );
             }
         }
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_process_line_valid() -> Result<()> {
-        test_process_lines("test/valid.txt", "Valid")
-    }
-
-    #[test]
-    fn test_process_line_invalid() -> Result<()> {
-        test_process_lines("test/invalid.txt", "Invalid")
     }
 }
