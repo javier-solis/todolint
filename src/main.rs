@@ -186,4 +186,39 @@ mod tests {
         assert_eq!(analysis.valids.len(), 0, "Expected no valid todos");
         Ok(())
     }
+
+    fn test_process_lines(filename: &str, expected_variant: &str) -> Result<()> {
+        let general_todo_re = create_general_todo_regex()?;
+        let file = File::open(filename)?;
+        let reader = BufReader::new(file);
+
+        for (line_number, line) in reader.lines().enumerate() {
+            let line = line?;
+            let result = process_line(&line, line_number, &general_todo_re);
+
+            assert!(
+                result.is_some(),
+                "Expected Some result for line {}",
+                line_number + 1
+            );
+
+            match expected_variant {
+                "Valid" => assert!(matches!(result, Some(TodoCommentResult::Valid(_)))),
+                "Invalid" => assert!(matches!(result, Some(TodoCommentResult::Invalid(_)))),
+                _ => panic!("Unexpected variant type"),
+            }
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_process_line_valid() -> Result<()> {
+        test_process_lines("test/valid.txt", "Valid")
+    }
+
+    #[test]
+    fn test_process_line_invalid() -> Result<()> {
+        test_process_lines("test/invalid.txt", "Invalid")
+    }
 }
