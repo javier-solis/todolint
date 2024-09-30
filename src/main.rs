@@ -47,7 +47,6 @@ fn analyze_file(filename: &str) -> Result<FileAnalysis> {
     let reader = BufReader::new(file);
 
     let general_todo_re = create_general_todo_regex()?;
-    let specific_todo_re = create_specific_todo_regex()?;
 
     let mut file_analysis = FileAnalysis {
         metadata: FileMetadata {
@@ -60,7 +59,7 @@ fn analyze_file(filename: &str) -> Result<FileAnalysis> {
 
     for (line_number, line) in reader.lines().enumerate() {
         let line = line.context("Failed to read line")?;
-        let processed_line = process_line(&line, line_number, &general_todo_re, &specific_todo_re);
+        let processed_line = process_line(&line, line_number, &general_todo_re);
 
         match processed_line {
             Some(TodoCommentResult::Valid(comment)) => {
@@ -76,51 +75,43 @@ fn analyze_file(filename: &str) -> Result<FileAnalysis> {
     Ok(file_analysis)
 }
 
-fn process_line(
-    line: &str,
-    line_number: usize,
-    general_re: &Regex,
-    specific_re: &Regex,
-) -> Option<TodoCommentResult> {
-    if let Some(general_cap) = general_re.captures(line) {
-        let todo_content = &general_cap["todo_content"];
-        let comment_content = &general_cap["comment_content"];
+fn process_line(line: &str, line_number: usize, general_re: &Regex) -> Option<TodoCommentResult> {
+    let general_cap = match general_re.captures(line) {
+        Some(cap) => cap,
+        None => return None,
+    };
 
-        if specific_re.is_match(todo_content) {
-            let mut delimiters = Vec::new();
+    let todo_content = &general_cap["todo_content"];
+    let comment_content = &general_cap["comment_content"];
 
-            if let Some(specific_cap) = specific_re.captures(todo_content) {
-                let delimiter_types = ["parens", "braces", "brackets", "angles"];
-                let matched_delimiters: Vec<(&str, &str)> = delimiter_types
-                    .iter()
-                    .filter_map(|&delimiter_type| {
-                        specific_cap
-                            .name(delimiter_type)
-                            .map(|matched_content| (delimiter_type, matched_content.as_str()))
-                    })
-                    .collect();
+    if validate_todo(todo_content).unwrap_or(false) {
+        let mut delimiters = Vec::new();
+        let delimiter_types = [
+            ("()", "parens"),
+            ("{}", "braces"),
+            ("[]", "brackets"),
+            ("<>", "angles"),
+        ];
 
-                for (delimiter_type, delimiter_content) in matched_delimiters {
-                    delimiters.push(Delimiter {
-                        delimiter_type: delimiter_type.to_string(),
-                        content: delimiter_content.to_string(),
-                    });
-                }
+        for (delim, delim_type) in delimiter_types.iter() {
+            if let Some(content) = extract_delimiter_content(delim, todo_content) {
+                delimiters.push(Delimiter {
+                    delimiter_type: delim_type.to_string(),
+                    content,
+                });
             }
-
-            Some(TodoCommentResult::Valid(TodoComment {
-                line: line_number + 1,
-                comment: comment_content.to_string(),
-                delimiters,
-            }))
-        } else {
-            Some(TodoCommentResult::Invalid(InvalidTodoComment {
-                line: line_number + 1,
-                full_text: general_cap[0].to_string(),
-            }))
         }
+
+        Some(TodoCommentResult::Valid(TodoComment {
+            line: line_number + 1,
+            comment: comment_content.to_string(),
+            delimiters,
+        }))
     } else {
-        None
+        Some(TodoCommentResult::Invalid(InvalidTodoComment {
+            line: line_number + 1,
+            full_text: general_cap[0].to_string(),
+        }))
     }
 }
 
@@ -137,22 +128,60 @@ fn create_general_todo_regex() -> Result<Regex> {
     .context("Failed to create general todo regex")
 }
 
-fn create_specific_todo_regex() -> Result<Regex> {
-    let keyword_pattern = r"[a-zA-Z0-9_-]+";
+/// Definition of a "valid" todo comment:
+/// * There is only 0 or 1 occurrence of each delimiter type:
+///   * Types: parentheses, braces, brackets, and angle brackets.
+///    * Only characters matching the standard word character class (\w) are allowed between the delimiters
+/// * The order of the delimiters doesn't matter.
+fn validate_todo(todo_content: &str) -> Result<bool> {
+    let keyword_pattern = r".*?";
+    let delimiters = [
+        (r"\((?<parens>{})\)", "parens"),
+        (r"\{(?<braces>{})\}", "braces"),
+        (r"\[(?<brackets>{})\]", "brackets"),
+        (r"<(?<angles>{})>", "angles"),
+    ];
 
-    let parens_pattern = format!(r"\((?<parens>{})\)", keyword_pattern);
-    let braces_pattern = format!(r"\{{(?<braces>{})\}}", keyword_pattern);
-    let brackets_pattern = format!(r"\[(?<brackets>{})\]", keyword_pattern);
-    let angles_pattern = format!(r"<(?<angles>{})>", keyword_pattern);
+    let mut found_delimiters = Vec::new();
 
-    let delimiter_pattern = format!(
-        r"(?:{}|{}|{}|{})",
-        parens_pattern, braces_pattern, brackets_pattern, angles_pattern
-    );
+    for (pattern, name) in &delimiters {
+        let regex = Regex::new(&format!(r"^{}$", pattern.replace("{}", keyword_pattern)))
+            .with_context(|| format!("Failed to create regex for {}", name))?;
 
-    Regex::new(&format!(r"^{}{{0,4}}$", delimiter_pattern))
-        .context("Failed to create specific todo regex")
+        if let Some(captures) = regex.captures(todo_content) {
+            let value = captures
+                .name(name)
+                .ok_or_else(|| anyhow::anyhow!("Failed to get capture group"))?
+                .as_str();
+
+            println!("Captured {} content: {}", name, value);
+
+            // todo: simplify or use a variable/helper-function?
+            if value.is_empty() || Regex::new(r"[^\w]").unwrap().is_match(value) {
+                return Ok(false);
+            }
+
+            if found_delimiters.contains(name) {
+                return Ok(false); // Duplicate delimiter found
+            }
+            found_delimiters.push(name);
+        }
+    }
+
+    Ok(found_delimiters.len() <= 4)
 }
+
+fn extract_delimiter_content(delimiter: &str, line: &str) -> Option<String> {
+    let (open_delim, close_delim) = (delimiter.chars().next()?, delimiter.chars().last()?);
+    let pattern = format!(r"\{}(.*?)\{}", open_delim, close_delim);
+
+    let re = Regex::new(&pattern).ok()?;
+
+    re.captures(line)
+        .and_then(|cap| cap.get(1))
+        .map(|m| m.as_str().to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
