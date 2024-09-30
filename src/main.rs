@@ -256,4 +256,20 @@ mod tests {
             }
         }
     }
+
+    #[rstest]
+    #[case("{}", "hello {world}", Some("world".to_string()))]
+    #[case("()", "123 (456)", Some("456".to_string()))]
+    #[case("[]", "[brackets]", Some("brackets".to_string()))]
+    #[case("<>", "angle <brackets>", Some("brackets".to_string()))]
+    #[case("{}", "no braces", None)]
+    #[case("()", "mismatched (parenthesis]", None)]
+    fn test_extract_delimiter_content(
+        #[case] delimiter: &str,
+        #[case] line: &str,
+        #[case] expected: Option<String>,
+    ) {
+        let result = extract_delimiter_content(delimiter, line);
+        assert_eq!(result, expected);
+    }
 }
