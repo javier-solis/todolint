@@ -174,8 +174,12 @@ fn validate_todo(todo_content: &str) -> Result<bool> {
 }
 
 fn extract_delimiter_content(delimiter: &str, line: &str) -> Option<String> {
-    let (open_delim, close_delim) = (delimiter.chars().next()?, delimiter.chars().last()?);
-    let pattern = format!(r"\{}(.*?)\{}", open_delim, close_delim);
+    let pattern = if delimiter == "<>" {
+        r"<(.*?)>".to_string()
+    } else {
+        let (open_delim, close_delim) = (delimiter.chars().next()?, delimiter.chars().last()?);
+        format!(r"\{}(.*?)\{}", open_delim, close_delim)
+    };
 
     let re = Regex::new(&pattern).ok()?;
 
