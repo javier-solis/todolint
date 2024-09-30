@@ -228,35 +228,51 @@ mod tests {
         reader.lines().map(|l| l.unwrap()).collect()
     }
 
+    #[derive(Debug, PartialEq)]
+    pub enum TodoValidity {
+        Valid,
+        Invalid,
+        NotApplicable,
+    }
+
     #[rstest]
-    #[case::valid(read_test_file("test/valid.txt"), true)]
-    #[case::invalid(read_test_file("test/invalid.txt"), false)]
-    fn test_process_line(#[case] lines: Vec<String>, #[case] is_valid: bool) {
+    #[case::valid(read_test_file("test/valid.txt"), TodoValidity::Valid)]
+    #[case::invalid(read_test_file("test/invalid.txt"), TodoValidity::Invalid)]
+    #[case::na(read_test_file("test/na.txt"), TodoValidity::NotApplicable)]
+    fn test_process_line(#[case] lines: Vec<String>, #[case] validity: TodoValidity) {
         for (index, line) in lines.iter().enumerate() {
             let result = process_line(line, index);
 
-            assert!(
-                result.is_some(),
-                "Expected Some result for line {}",
-                index + 1
-            );
+            print_todo_result(&result);
 
-            if is_valid {
-                assert!(
-                    matches!(result, Some(TodoCommentResult::Valid(_))),
-                    "Expected Valid but got {:?} for line {}: {}",
-                    result,
-                    index + 1,
-                    line
-                );
-            } else {
-                assert!(
-                    matches!(result, Some(TodoCommentResult::Invalid(_))),
-                    "Expected Invalid but got {:?} for line {}: {}",
-                    result,
-                    index + 1,
-                    line
-                );
+            match validity {
+                TodoValidity::Valid => {
+                    assert!(
+                        matches!(result, Some(TodoCommentResult::Valid(_))),
+                        "Expected Valid but got {:?} for line {}: {}",
+                        result,
+                        index + 1,
+                        line
+                    );
+                }
+                TodoValidity::Invalid => {
+                    assert!(
+                        matches!(result, Some(TodoCommentResult::Invalid(_))),
+                        "Expected Invalid but got {:?} for line {}: {}",
+                        result,
+                        index + 1,
+                        line
+                    );
+                }
+                TodoValidity::NotApplicable => {
+                    assert!(
+                        result.is_none(),
+                        "Expected None but got {:?} for line {}: {}",
+                        result,
+                        index + 1,
+                        line
+                    );
+                }
             }
         }
     }
