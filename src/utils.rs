@@ -2,11 +2,9 @@ use serde_json;
 
 use crate::types::{Delimiter, TodoComment, TodoCommentResult};
 
-pub fn print_todo_result_json(result: &Option<TodoCommentResult>) {
-    if let Some(todo_result) = result {
-        let json = serde_json::to_string_pretty(todo_result).unwrap();
-        println!("{}\n", json);
-    }
+pub fn print_json<T: serde::Serialize>(item: &T) {
+    let json = serde_json::to_string_pretty(item).unwrap();
+    println!("{}\n", json);
 }
 
 pub fn print_todo_result(result: &Option<TodoCommentResult>) {
