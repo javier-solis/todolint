@@ -75,8 +75,10 @@ fn analyze_file(filename: &str) -> Result<FileAnalysis> {
     Ok(file_analysis)
 }
 
-fn process_line(line: &str, line_number: usize, general_re: &Regex) -> Option<TodoCommentResult> {
-    let general_cap = match general_re.captures(line) {
+fn process_line(line: &str, line_number: usize) -> Option<TodoCommentResult> {
+    let general_todo_re = create_general_todo_regex().unwrap();
+
+    let general_cap = match general_todo_re.captures(line) {
         Some(cap) => cap,
         None => return None,
     };
@@ -226,10 +228,8 @@ mod tests {
     #[case::valid(read_test_file("test/valid.txt"), true)]
     #[case::invalid(read_test_file("test/invalid.txt"), false)]
     fn test_process_line(#[case] lines: Vec<String>, #[case] is_valid: bool) {
-        let general_todo_re = create_general_todo_regex().unwrap();
-
         for (index, line) in lines.iter().enumerate() {
-            let result = process_line(line, index, &general_todo_re);
+            let result = process_line(line, index);
 
             assert!(
                 result.is_some(),
