@@ -1,6 +1,6 @@
 use serde_json;
 
-use crate::types::{Delimiter, TodoComment, TodoCommentResult};
+use crate::types::TodoCommentResult;
 
 pub fn print_json<T: serde::Serialize>(item: &T) {
     let json = serde_json::to_string_pretty(item).unwrap();

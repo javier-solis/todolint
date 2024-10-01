@@ -12,7 +12,7 @@ pub struct DirectoryAnalysis {
 #[derive(Serialize, Debug)]
 pub struct FileAnalysis {
     pub metadata: FileMetadata,
-    pub valids: Vec<TodoComment>,
+    pub valids: Vec<ValidTodoComment>,
     pub invalids: Vec<InvalidTodoComment>,
 }
 
@@ -23,7 +23,7 @@ pub struct FileMetadata {
 }
 
 #[derive(Serialize, Debug)]
-pub struct TodoComment {
+pub struct ValidTodoComment {
     pub line: usize,
     pub comment: String,
     pub delimiters: Vec<Delimiter>,
@@ -43,6 +43,6 @@ pub struct Delimiter {
 
 #[derive(Serialize, Debug)]
 pub enum TodoCommentResult {
-    Valid(TodoComment),
+    Valid(ValidTodoComment),
     Invalid(InvalidTodoComment),
 }

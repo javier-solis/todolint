@@ -8,8 +8,8 @@ use std::{
 use utils::{print_todo_result, print_todo_result_json};
 mod types;
 use types::{
-    Delimiter, DirectoryAnalysis, FileAnalysis, FileMetadata, InvalidTodoComment, TodoComment,
-    TodoCommentResult,
+    Delimiter, DirectoryAnalysis, FileAnalysis, FileMetadata, InvalidTodoComment,
+    TodoCommentResult, ValidTodoComment,
 };
 mod utils;
 use std::path::Path;
@@ -102,7 +102,7 @@ fn process_line(line: &str, line_number: usize) -> Option<TodoCommentResult> {
             }
         }
 
-        Some(TodoCommentResult::Valid(TodoComment {
+        Some(TodoCommentResult::Valid(ValidTodoComment {
             line: line_number + 1,
             comment: comment_content.to_string(),
             delimiters,
