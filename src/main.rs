@@ -128,11 +128,17 @@ fn create_general_todo_regex() -> Result<Regex> {
     .context("Failed to create general todo regex")
 }
 
+/// Validates the contents of a todo (what's between 'todo' and ':'). Returns true if valid,
+/// false otherwise.
+///
 /// Definition of a "valid" todo comment:
 /// * There is only 0 or 1 occurrence of each delimiter type:
 ///   * Types: parentheses, braces, brackets, and angle brackets.
-///    * Only characters matching the standard word character class (\w) are allowed between the delimiters
+///   * Only characters matching the standard word character class (\w) are allowed between
+///     matching delimiter characters.
 /// * The order of the delimiters doesn't matter.
+///
+
 fn validate_todo(todo_content: &str) -> Result<bool> {
     let keyword_pattern = r".*?";
     let delimiters = [
@@ -171,6 +177,18 @@ fn validate_todo(todo_content: &str) -> Result<bool> {
     Ok(found_delimiters.len() <= 4)
 }
 
+/// Extracts the content between the specified delimiter characters in a given line of text.
+///
+/// This function assumes that the input `line` has already been validated to contain a valid
+/// todo comment: the delimiter content is guaranteed to not be empty and only has standard word
+/// characters.
+///
+/// # Arguments
+/// * `delimiter` - The delimiter characters to use for extracting the content, e.g. `"<>"` or `"()"`.
+/// * `line` - The line of text to extract the content from.
+///
+/// # Returns
+/// An `Option<String>` containing the extracted content, or `None` if the delimiter could not be found.
 fn extract_delimiter_content(delimiter: &str, line: &str) -> Option<String> {
     let pattern = if delimiter == "<>" {
         r"<(.*?)>".to_string()
