@@ -46,8 +46,6 @@ fn analyze_file(filename: &str) -> Result<FileAnalysis> {
     let metadata = file.metadata().context("Failed to get file metadata")?;
     let reader = BufReader::new(file);
 
-    let general_todo_re = create_general_todo_regex()?;
-
     let mut file_analysis = FileAnalysis {
         metadata: FileMetadata {
             filepath: filename.to_string(),
@@ -59,7 +57,7 @@ fn analyze_file(filename: &str) -> Result<FileAnalysis> {
 
     for (line_number, line) in reader.lines().enumerate() {
         let line = line.context("Failed to read line")?;
-        let processed_line = process_line(&line, line_number, &general_todo_re);
+        let processed_line = process_line(&line, line_number);
 
         match processed_line {
             Some(TodoCommentResult::Valid(comment)) => {
