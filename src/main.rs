@@ -8,8 +8,8 @@ use std::{
 use utils::{print_todo_result, print_todo_result_json};
 mod types;
 use types::{
-    AnalysisResult, Delimiter, DirectoryAnalysis, FileAnalysis, FileMetadata, InvalidTodoComment,
-    TodoCommentResult, ValidTodoComment,
+    AnalysisResult, CommentMarker, Delimiter, DirectoryAnalysis, FileAnalysis, FileMetadata,
+    InvalidTodoComment, TodoCommentResult, ValidTodoComment,
 };
 mod utils;
 use std::path::Path;
@@ -83,17 +83,17 @@ fn analyze_file(filename: &str) -> Result<FileAnalysis> {
 }
 
 fn process_line(line: &str, line_number: usize) -> Option<TodoCommentResult> {
-    let general_todo_re = create_general_todo_regex().unwrap();
+    let validation_regex = create_validation_regex(CommentMarker::Todo).unwrap();
 
-    let general_cap = match general_todo_re.captures(line) {
+    let general_cap = match validation_regex.captures(line) {
         Some(cap) => cap,
         None => return None,
     };
 
-    let todo_content = &general_cap["todo_content"];
+    let marker_content = &general_cap["content"];
     let comment_content = &general_cap["comment_content"];
 
-    if validate_todo(todo_content).unwrap_or(false) {
+    if validate_todo(marker_content).unwrap_or(false) {
         let mut delimiters = Vec::new();
         let delimiter_types = [
             ("()", "parens"),
@@ -103,7 +103,7 @@ fn process_line(line: &str, line_number: usize) -> Option<TodoCommentResult> {
         ];
 
         for (delim, delim_type) in delimiter_types.iter() {
-            if let Some(content) = extract_delimiter_content(delim, todo_content) {
+            if let Some(content) = extract_delimiter_content(delim, marker_content) {
                 delimiters.push(Delimiter {
                     delimiter_type: delim_type.to_string(),
                     content,
@@ -124,17 +124,17 @@ fn process_line(line: &str, line_number: usize) -> Option<TodoCommentResult> {
     }
 }
 
-fn create_general_todo_regex() -> Result<Regex> {
-    let todo_prefix = r"//\s*todo\s*";
-    let todo_content = r"(?<todo_content>.*?)";
+fn create_validation_regex(marker: CommentMarker) -> Result<Regex> {
+    let prefix = format!(r"//\s*{}\s*", marker);
+    let marker_content = r"(?<content>.*?)";
     let colon_separator = r"\s*:\s*";
     let comment_content = r"(?<comment_content>.*)";
 
     Regex::new(&format!(
         r"{}{}{}{}",
-        todo_prefix, todo_content, colon_separator, comment_content
+        prefix, marker_content, colon_separator, comment_content
     ))
-    .context("Failed to create general todo regex")
+    .context("Failed to create validation regex")
 }
 
 /// Validates the contents of a todo (what's between 'todo' and ':'). Returns true if valid,

@@ -1,6 +1,8 @@
 use chrono::{DateTime, Utc};
 use email_address::EmailAddress;
 use serde::Serialize;
+use strum_macros::{AsRefStr, Display};
+
 #[derive(Serialize, Debug)]
 pub enum AnalysisResult {
     Directory(DirectoryAnalysis),
@@ -56,4 +58,10 @@ pub enum TodoCommentResult {
 pub struct BlameInfo {
     pub email: EmailAddress,
     pub timestamp: DateTime<Utc>,
+}
+
+#[derive(Display, AsRefStr)]
+#[strum(serialize_all = "lowercase")]
+pub enum CommentMarker {
+    Todo,
 }
