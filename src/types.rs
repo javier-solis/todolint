@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-
+use email_address::EmailAddress;
 use serde::Serialize;
 
 #[derive(Serialize, Debug)]
@@ -45,4 +45,10 @@ pub struct Delimiter {
 pub enum TodoCommentResult {
     Valid(ValidTodoComment),
     Invalid(InvalidTodoComment),
+}
+
+#[derive(Debug)]
+pub struct BlameInfo {
+    pub email: EmailAddress,
+    pub timestamp: DateTime<Utc>,
 }

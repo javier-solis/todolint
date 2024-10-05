@@ -6,7 +6,7 @@ use std::{path::Path, str::FromStr};
 
 use serde_json;
 
-use crate::types::TodoCommentResult;
+use crate::types::{BlameInfo, TodoCommentResult};
 
 pub fn print_json<T: serde::Serialize>(item: &T) {
     let json = serde_json::to_string_pretty(item).unwrap();
@@ -44,13 +44,6 @@ pub fn print_todo_result(result: &Option<TodoCommentResult>) {
         println!("\n");
     }
 }
-
-#[derive(Debug)]
-pub struct BlameInfo {
-    email: EmailAddress,
-    timestamp: DateTime<Utc>,
-}
-
 
 /// Retrieve git blame information (email and timestamp) for a specific line in a file within a
 /// repository.
