@@ -1,6 +1,11 @@
 use chrono::{DateTime, Utc};
 use email_address::EmailAddress;
 use serde::Serialize;
+#[derive(Serialize, Debug)]
+pub enum AnalysisResult {
+    Directory(DirectoryAnalysis),
+    File(FileAnalysis),
+}
 
 #[derive(Serialize, Debug)]
 pub struct DirectoryAnalysis {

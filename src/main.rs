@@ -8,7 +8,7 @@ use std::{
 use utils::{print_todo_result, print_todo_result_json};
 mod types;
 use types::{
-    Delimiter, DirectoryAnalysis, FileAnalysis, FileMetadata, InvalidTodoComment,
+    AnalysisResult, Delimiter, DirectoryAnalysis, FileAnalysis, FileMetadata, InvalidTodoComment,
     TodoCommentResult, ValidTodoComment,
 };
 mod utils;
@@ -19,6 +19,15 @@ extern crate chrono;
 
 fn main() -> Result<()> {
     Ok(())
+}
+fn analyze_path(path: &Path) -> Result<AnalysisResult> {
+    if path.is_dir() {
+        Ok(AnalysisResult::Directory(analyze_dir(path)))
+    } else if path.is_file() {
+        Ok(AnalysisResult::File(analyze_file(path.to_str().unwrap())?))
+    } else {
+        Err(anyhow::anyhow!("Path is neither a file nor a directory"))
+    }
 }
 
 fn analyze_dir(dir: &Path) -> DirectoryAnalysis {
