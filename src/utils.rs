@@ -1,7 +1,8 @@
 use anyhow::{Context, Result};
 use chrono::{DateTime, TimeZone, Utc};
+use email_address::EmailAddress;
 use git2::{BlameOptions, Repository};
-use std::path::Path;
+use std::{path::Path, str::FromStr};
 
 use serde_json;
 
@@ -46,7 +47,7 @@ pub fn print_todo_result(result: &Option<TodoCommentResult>) {
 
 #[derive(Debug)]
 pub struct BlameInfo {
-    email: String,
+    email: EmailAddress,
     timestamp: DateTime<Utc>,
 }
 
@@ -70,8 +71,12 @@ pub fn get_blame_info(repo_path: &Path, file_path: &Path, line_number: usize) ->
         .find_commit(commit_id)
         .with_context(|| format!("Failed to find commit {}", commit_id))?;
 
-    // From commit, extract author email and convert timestamp to chrono Utc
-    let author_email = commit.author().email().unwrap_or("Unknown").to_string();
+    // From commit, extract author email and timestamp
+    let author_email = commit
+        .author()
+        .email()
+        .and_then(|email| EmailAddress::from_str(email).ok())
+        .unwrap_or_else(|| EmailAddress::new_unchecked("unknown@example.com"));
     let timestamp = Utc
         .timestamp_opt(commit.time().seconds(), 0)
         .single()
