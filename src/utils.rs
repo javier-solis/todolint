@@ -54,9 +54,9 @@ pub struct BlameInfo {
 
 /// Retrieve git blame information (email and timestamp) for a specific line in a file within a
 /// repository.
-pub fn get_blame_info(repo_path: &Path, file_path: &Path, line_number: usize) -> Result<BlameInfo> {
-    let repo = Repository::open(repo_path)
-        .with_context(|| format!("Failed to open repository at {:?}", repo_path))?;
+pub fn get_blame_info(file_path: &Path, line_number: usize) -> Result<BlameInfo> {
+    let repo = Repository::discover(file_path)
+        .with_context(|| format!("Failed to discover repository for file {:?}", file_path))?;
 
     // Get blame information for the specified file and line, then retrieve the corresponding commit
     let mut blame_opts = BlameOptions::new();
