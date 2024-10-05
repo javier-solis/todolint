@@ -13,8 +13,8 @@ pub fn print_json<T: serde::Serialize>(item: &T) {
     println!("{}\n", json);
 }
 
-pub fn print_todo_result(result: &Option<TodoCommentResult>) {
-    if let Some(todo_result) = result {
+pub fn print_todo_result(result: &Result<TodoCommentResult>) {
+    if let Ok(todo_result) = result {
         match todo_result {
             TodoCommentResult::Valid(comment) => {
                 println!("'todo' on line {}:", comment.line);
@@ -41,6 +41,7 @@ pub fn print_todo_result(result: &Option<TodoCommentResult>) {
                 println!("\tIs Valid: False");
                 println!("\tFull text: {}", comment.line_info.full_text);
             }
+            _ => {}
         }
         println!("\n");
     }

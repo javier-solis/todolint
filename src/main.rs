@@ -8,8 +8,9 @@ use std::{
 use utils::{print_todo_result, print_todo_result_json};
 mod types;
 use types::{
-    AnalysisResult, CommentMarker, Delimiter, DirectoryAnalysis, FileAnalysis, FileMetadata,
-    InvalidContent, InvalidTodoComment, TodoCommentResult, ValidContent, ValidTodoComment,
+    AnalysisResult, BlameInfo, CommentMarker, Delimiter, DirectoryAnalysis, FileAnalysis,
+    FileMetadata, InvalidContent, InvalidTodoComment, TodoCommentResult, ValidContent,
+    ValidTodoComment,
 };
 mod utils;
 use std::path::Path;
@@ -66,32 +67,35 @@ fn analyze_file(filename: &str) -> Result<FileAnalysis> {
 
     for (line_number, line) in reader.lines().enumerate() {
         let line = line.context("Failed to read line")?;
-        let processed_line = process_line(&line, line_number);
+        let processed_line = process_line(&line, line_number)?;
 
         match processed_line {
-            Some(TodoCommentResult::Valid(comment)) => {
+            TodoCommentResult::Valid(comment) => {
                 file_analysis.valids.push(comment);
             }
-            Some(TodoCommentResult::Invalid(comment)) => {
+            TodoCommentResult::Invalid(comment) => {
                 file_analysis.invalids.push(comment);
             }
-            None => {}
+            _ => {}
         }
     }
 
     Ok(file_analysis)
 }
 
-fn process_line(line: &str, line_number: usize) -> Option<TodoCommentResult> {
-    let validation_regex = create_validation_regex(CommentMarker::Todo).unwrap();
+fn process_line(line: &str, line_number: usize) -> Result<TodoCommentResult> {
+    let validation_regex = create_validation_regex(CommentMarker::Todo)
+        .context("Failed to create validation regex")?;
 
     let general_cap = match validation_regex.captures(line) {
         Some(cap) => cap,
-        None => return None,
+        None => return Ok(TodoCommentResult::NotApplicable),
     };
 
     let marker_content = &general_cap["content"];
     let comment_content = &general_cap["comment_content"];
+
+    let line_number = line_number + 1; // for human readable purposes
 
     if validate_todo(marker_content).unwrap_or(false) {
         let mut delimiters = Vec::new();
@@ -111,16 +115,16 @@ fn process_line(line: &str, line_number: usize) -> Option<TodoCommentResult> {
             }
         }
 
-        Some(TodoCommentResult::Valid(ValidTodoComment {
-            line: line_number + 1,
+        Ok(TodoCommentResult::Valid(ValidTodoComment {
+            line: line_number,
             line_info: ValidContent {
                 comment: comment_content.to_string(),
                 delimiters,
             },
         }))
     } else {
-        Some(TodoCommentResult::Invalid(InvalidTodoComment {
-            line: line_number + 1,
+        Ok(TodoCommentResult::Invalid(InvalidTodoComment {
+            line: line_number,
             line_info: InvalidContent {
                 full_text: general_cap[0].to_string(),
             },
@@ -277,7 +281,7 @@ mod tests {
             match validity {
                 TodoValidity::Valid => {
                     assert!(
-                        matches!(result, Some(TodoCommentResult::Valid(_))),
+                        matches!(result, Ok(TodoCommentResult::Valid(_))),
                         "Expected Valid but got {:?} for line {}: {}",
                         result,
                         index + 1,
@@ -286,7 +290,7 @@ mod tests {
                 }
                 TodoValidity::Invalid => {
                     assert!(
-                        matches!(result, Some(TodoCommentResult::Invalid(_))),
+                        matches!(result, Ok(TodoCommentResult::Invalid(_))),
                         "Expected Invalid but got {:?} for line {}: {}",
                         result,
                         index + 1,
@@ -295,8 +299,8 @@ mod tests {
                 }
                 TodoValidity::NotApplicable => {
                     assert!(
-                        result.is_none(),
-                        "Expected None but got {:?} for line {}: {}",
+                        matches!(result, Ok(TodoCommentResult::NotApplicable)),
+                        "Expected n/a but got {:?} for line {}: {}",
                         result,
                         index + 1,
                         line

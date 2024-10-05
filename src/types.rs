@@ -33,6 +33,7 @@ pub struct FileMetadata {
 pub enum TodoCommentResult {
     Valid(ValidTodoComment),
     Invalid(InvalidTodoComment),
+    NotApplicable,
 }
 
 pub type ValidTodoComment = TodoCommentBase<ValidContent>;
