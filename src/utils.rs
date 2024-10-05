@@ -19,16 +19,17 @@ pub fn print_todo_result(result: &Option<TodoCommentResult>) {
             TodoCommentResult::Valid(comment) => {
                 println!("'todo' on line {}:", comment.line);
                 println!("\tIs Valid: True");
-                println!("\tComment content: {}", comment.comment);
+                println!("\tComment content: {}", comment.line_info.comment);
                 println!(
                     "\tDelimiters Found: {:?}",
                     comment
+                        .line_info
                         .delimiters
                         .iter()
                         .map(|d| d.delimiter_type.as_str())
                         .collect::<Vec<_>>()
                 );
-                for delimiter in &comment.delimiters {
+                for delimiter in &comment.line_info.delimiters {
                     println!(
                         "\tContents of {}: {}",
                         delimiter.delimiter_type, delimiter.content
@@ -38,7 +39,7 @@ pub fn print_todo_result(result: &Option<TodoCommentResult>) {
             TodoCommentResult::Invalid(comment) => {
                 println!("'todo' on line {}:", comment.line);
                 println!("\tIs Valid: False");
-                println!("\tFull text: {}", comment.full_text);
+                println!("\tFull text: {}", comment.line_info.full_text);
             }
         }
         println!("\n");

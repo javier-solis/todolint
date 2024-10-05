@@ -30,15 +30,29 @@ pub struct FileMetadata {
 }
 
 #[derive(Serialize, Debug)]
-pub struct ValidTodoComment {
+pub enum TodoCommentResult {
+    Valid(ValidTodoComment),
+    Invalid(InvalidTodoComment),
+}
+
+pub type ValidTodoComment = TodoCommentBase<ValidContent>;
+pub type InvalidTodoComment = TodoCommentBase<InvalidContent>;
+
+#[derive(Serialize, Debug)]
+pub struct TodoCommentBase<T> {
     pub line: usize,
+    #[serde(flatten)]
+    pub line_info: T,
+}
+
+#[derive(Serialize, Debug)]
+pub struct ValidContent {
     pub comment: String,
     pub delimiters: Vec<Delimiter>,
 }
 
 #[derive(Serialize, Debug)]
-pub struct InvalidTodoComment {
-    pub line: usize,
+pub struct InvalidContent {
     pub full_text: String,
 }
 
@@ -49,12 +63,6 @@ pub struct Delimiter {
 }
 
 #[derive(Serialize, Debug)]
-pub enum TodoCommentResult {
-    Valid(ValidTodoComment),
-    Invalid(InvalidTodoComment),
-}
-
-#[derive(Debug)]
 pub struct BlameInfo {
     pub email: EmailAddress,
     pub timestamp: DateTime<Utc>,

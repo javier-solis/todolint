@@ -9,7 +9,7 @@ use utils::{print_todo_result, print_todo_result_json};
 mod types;
 use types::{
     AnalysisResult, CommentMarker, Delimiter, DirectoryAnalysis, FileAnalysis, FileMetadata,
-    InvalidTodoComment, TodoCommentResult, ValidTodoComment,
+    InvalidContent, InvalidTodoComment, TodoCommentResult, ValidContent, ValidTodoComment,
 };
 mod utils;
 use std::path::Path;
@@ -113,13 +113,17 @@ fn process_line(line: &str, line_number: usize) -> Option<TodoCommentResult> {
 
         Some(TodoCommentResult::Valid(ValidTodoComment {
             line: line_number + 1,
-            comment: comment_content.to_string(),
-            delimiters,
+            line_info: ValidContent {
+                comment: comment_content.to_string(),
+                delimiters,
+            },
         }))
     } else {
         Some(TodoCommentResult::Invalid(InvalidTodoComment {
             line: line_number + 1,
-            full_text: general_cap[0].to_string(),
+            line_info: InvalidContent {
+                full_text: general_cap[0].to_string(),
+            },
         }))
     }
 }
