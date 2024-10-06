@@ -74,3 +74,9 @@ pub struct BlameInfo {
 pub enum CommentMarker {
     Todo,
 }
+
+#[derive(Display, AsRefStr)]
+pub enum CaptureGroupNames {
+    MarkerContent,
+    CommentContent,
+}

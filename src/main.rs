@@ -8,9 +8,9 @@ use std::{
 use utils::{print_todo_result, print_todo_result_json};
 mod types;
 use types::{
-    AnalysisResult, BlameInfo, CommentMarker, Delimiter, DirectoryAnalysis, FileAnalysis,
-    FileMetadata, InvalidContent, InvalidTodoComment, TodoCommentResult, ValidContent,
-    ValidTodoComment,
+    AnalysisResult, BlameInfo, CaptureGroupNames, CommentMarker, Delimiter, DirectoryAnalysis,
+    FileAnalysis, FileMetadata, InvalidContent, InvalidTodoComment, TodoCommentResult,
+    ValidContent, ValidTodoComment,
 };
 mod utils;
 use std::path::Path;
@@ -92,8 +92,25 @@ fn process_line(line: &str, line_number: usize) -> Result<TodoCommentResult> {
         None => return Ok(TodoCommentResult::NotApplicable),
     };
 
-    let marker_content = &general_cap["content"];
-    let comment_content = &general_cap["comment_content"];
+    let marker_content = general_cap
+        .name(CaptureGroupNames::MarkerContent.as_ref())
+        .map(|m| m.as_str())
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "Missing '{}' capture group",
+                CaptureGroupNames::MarkerContent
+            )
+        })?;
+
+    let comment_content = general_cap
+        .name(CaptureGroupNames::CommentContent.as_ref())
+        .map(|m| m.as_str())
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "Missing '{}' capture group",
+                CaptureGroupNames::CommentContent
+            )
+        })?;
 
     let line_number = line_number + 1; // for human readable purposes
 
@@ -134,9 +151,9 @@ fn process_line(line: &str, line_number: usize) -> Result<TodoCommentResult> {
 
 fn create_validation_regex(marker: CommentMarker) -> Result<Regex> {
     let prefix = format!(r"//\s*{}\s*", marker);
-    let marker_content = r"(?<content>.*?)";
+    let marker_content = format!(r"(?<{}>.*?)", CaptureGroupNames::MarkerContent);
     let colon_separator = r"\s*:\s*";
-    let comment_content = r"(?<comment_content>.*)";
+    let comment_content = format!(r"(?<{}>.*)", CaptureGroupNames::CommentContent);
 
     Regex::new(&format!(
         r"{}{}{}{}",
