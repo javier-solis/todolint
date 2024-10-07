@@ -127,7 +127,7 @@ fn process_line(line: &str, line_number: usize) -> Result<TodoCommentResult> {
             if let Some(content) = extract_delimiter_content(delim, marker_content) {
                 delimiters.push(Delimiter {
                     delimiter_type: delim_type.to_string(),
-                    content,
+                    content: content.to_string(),
                 });
             }
         }
@@ -216,14 +216,8 @@ fn validate_todo(todo_content: &str) -> Result<bool> {
 /// This function assumes that the input `line` has already been validated to contain a valid
 /// todo comment: the delimiter content is guaranteed to not be empty and only has standard word
 /// characters.
-///
-/// # Arguments
-/// * `delimiter` - The delimiter characters to use for extracting the content, e.g. `"<>"` or `"()"`.
-/// * `line` - The line of text to extract the content from.
-///
-/// # Returns
-/// An `Option<String>` containing the extracted content, or `None` if the delimiter could not be found.
-fn extract_delimiter_content(delimiter: &str, line: &str) -> Option<String> {
+
+fn extract_delimiter_content<'a>(delimiter: &str, line: &'a str) -> Option<&'a str> {
     let pattern = if delimiter == "<>" {
         r"<(.*?)>".to_string()
     } else {
@@ -235,7 +229,7 @@ fn extract_delimiter_content(delimiter: &str, line: &str) -> Option<String> {
 
     re.captures(line)
         .and_then(|cap| cap.get(1))
-        .map(|m| m.as_str().to_string())
+        .map(|m| m.as_str())
 }
 
 #[cfg(test)]
@@ -328,16 +322,16 @@ mod tests {
     }
 
     #[rstest]
-    #[case("{}", "hello {world}", Some("world".to_string()))]
-    #[case("()", "123 (456)", Some("456".to_string()))]
-    #[case("[]", "[brackets]", Some("brackets".to_string()))]
-    #[case("<>", "angle <brackets>", Some("brackets".to_string()))]
+    #[case("{}", "hello {world}", Some("world"))]
+    #[case("()", "123 (456)", Some("456"))]
+    #[case("[]", "[brackets]", Some("brackets"))]
+    #[case("<>", "angle <brackets>", Some("brackets"))]
     #[case("{}", "no braces", None)]
     #[case("()", "mismatched (parenthesis]", None)]
     fn test_extract_delimiter_content(
         #[case] delimiter: &str,
         #[case] line: &str,
-        #[case] expected: Option<String>,
+        #[case] expected: Option<&str>,
     ) {
         let result = extract_delimiter_content(delimiter, line);
         assert_eq!(result, expected);
