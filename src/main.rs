@@ -124,7 +124,7 @@ fn process_line(line: &str, line_number: usize) -> Result<TodoCommentResult> {
         ];
 
         for (delim, delim_type) in delimiter_types.iter() {
-            if let Some(content) = extract_delimiter_content(delim, marker_content) {
+            if let Ok(Some(content)) = extract_delimiter_content(delim, marker_content) {
                 delimiters.push(Delimiter {
                     delimiter_type: delim_type.to_string(),
                     content: content.to_string(),
@@ -211,25 +211,23 @@ fn validate_todo(todo_content: &str) -> Result<bool> {
     Ok(found_delimiters.len() <= 4)
 }
 
-/// Extracts the content between the specified delimiter characters in a given line of text.
-///
-/// This function assumes that the input `line` has already been validated to contain a valid
-/// todo comment: the delimiter content is guaranteed to not be empty and only has standard word
-/// characters.
-
-fn extract_delimiter_content<'a>(delimiter: &str, line: &'a str) -> Option<&'a str> {
+/// Extracts content between specified delimiter characters in a given line of text.
+/// Returns None if no valid delimited content is found.
+fn extract_delimiter_content<'a>(delimiter: &str, line: &'a str) -> Result<Option<&'a str>> {
     let pattern = if delimiter == "<>" {
         r"<(.*?)>".to_string()
     } else {
-        let (open_delim, close_delim) = (delimiter.chars().next()?, delimiter.chars().last()?);
+        let open_delim = delimiter.chars().next().context("Empty delimiter")?;
+        let close_delim = delimiter.chars().last().context("Empty delimiter")?;
         format!(r"\{}(.*?)\{}", open_delim, close_delim)
     };
 
-    let re = Regex::new(&pattern).ok()?;
+    let re = Regex::new(&pattern).context("Failed to create regex")?;
 
-    re.captures(line)
+    Ok(re
+        .captures(line)
         .and_then(|cap| cap.get(1))
-        .map(|m| m.as_str())
+        .map(|m| m.as_str()))
 }
 
 #[cfg(test)]
@@ -322,18 +320,23 @@ mod tests {
     }
 
     #[rstest]
-    #[case("{}", "hello {world}", Some("world"))]
-    #[case("()", "123 (456)", Some("456"))]
-    #[case("[]", "[brackets]", Some("brackets"))]
-    #[case("<>", "angle <brackets>", Some("brackets"))]
-    #[case("{}", "no braces", None)]
-    #[case("()", "mismatched (parenthesis]", None)]
+    #[case("{}", "hello {world}", Ok(Some("world")))]
+    #[case("()", "123 (456)", Ok(Some("456")))]
+    #[case("[]", "[brackets]", Ok(Some("brackets")))]
+    #[case("<>", "angle <brackets>", Ok(Some("brackets")))]
+    #[case("{}", "no braces", Ok(None))]
+    #[case("()", "mismatched (parenthesis]", Ok(None))]
+    #[case("{}", "no braces", Ok(None))]
     fn test_extract_delimiter_content(
         #[case] delimiter: &str,
         #[case] line: &str,
-        #[case] expected: Option<&str>,
+        #[case] expected: Result<Option<&str>>,
     ) {
         let result = extract_delimiter_content(delimiter, line);
-        assert_eq!(result, expected);
+        match (&result, &expected) {
+            (Ok(actual), Ok(expected)) => assert_eq!(actual, expected),
+            (Err(_), Err(_)) => assert!(true), // both are errors, test passes
+            _ => panic!("Result {:?} does not match expected {:?}", result, expected),
+        }
     }
 }
