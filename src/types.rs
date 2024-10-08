@@ -49,7 +49,7 @@ pub struct TodoCommentBase<T> {
 #[derive(Serialize, Debug)]
 pub struct ValidContent {
     pub comment: String,
-    pub delimiters: Vec<Delimiter>,
+    pub delimiters: Vec<DelimiterContent>,
 }
 
 #[derive(Serialize, Debug)]
@@ -58,7 +58,7 @@ pub struct InvalidContent {
 }
 
 #[derive(Serialize, Debug)]
-pub struct Delimiter {
+pub struct DelimiterContent {
     pub delimiter_type: String,
     pub content: String,
 }

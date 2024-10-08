@@ -8,7 +8,7 @@ use std::{
 use utils::{print_todo_result, print_todo_result_json};
 mod types;
 use types::{
-    AnalysisResult, BlameInfo, CaptureGroupNames, CommentMarker, Delimiter, DirectoryAnalysis,
+    AnalysisResult, CaptureGroupNames, CommentMarker, DelimiterContent, DirectoryAnalysis,
     FileAnalysis, FileMetadata, InvalidContent, InvalidTodoComment, TodoCommentResult,
     ValidContent, ValidTodoComment,
 };
@@ -125,7 +125,7 @@ fn process_line(line: &str, line_number: usize) -> Result<TodoCommentResult> {
 
         for (delim, delim_type) in delimiter_types.iter() {
             if let Ok(Some(content)) = extract_delimiter_content(delim, marker_content) {
-                delimiters.push(Delimiter {
+                delimiters.push(DelimiterContent {
                     delimiter_type: delim_type.to_string(),
                     content: content.to_string(),
                 });
