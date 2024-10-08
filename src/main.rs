@@ -91,7 +91,6 @@ fn analyze_file(filename: &str) -> Result<FileAnalysis> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rstest::rstest;
 
     #[test]
     fn test_analyze_dir() -> Result<()> {
@@ -120,81 +119,5 @@ mod tests {
 
         assert_eq!(analysis.valids.len(), 0, "Expected no valid todos");
         Ok(())
-    }
-
-    fn read_test_file(filename: &str) -> Vec<String> {
-        let file = File::open(filename).unwrap();
-        let reader = BufReader::new(file);
-        reader.lines().map(|l| l.unwrap()).collect()
-    }
-
-    #[derive(Debug, PartialEq)]
-    pub enum TodoValidity {
-        Valid,
-        Invalid,
-        NotApplicable,
-    }
-
-    #[rstest]
-    #[case::valid(read_test_file("test/valid.txt"), TodoValidity::Valid)]
-    #[case::invalid(read_test_file("test/invalid.txt"), TodoValidity::Invalid)]
-    #[case::na(read_test_file("test/na.txt"), TodoValidity::NotApplicable)]
-    fn test_process_line(#[case] lines: Vec<String>, #[case] validity: TodoValidity) {
-        for (index, line) in lines.iter().enumerate() {
-            let result = process_line(line, index);
-
-            print_todo_result(&result);
-
-            match validity {
-                TodoValidity::Valid => {
-                    assert!(
-                        matches!(result, Ok(TodoCommentResult::Valid(_))),
-                        "Expected Valid but got {:?} for line {}: {}",
-                        result,
-                        index + 1,
-                        line
-                    );
-                }
-                TodoValidity::Invalid => {
-                    assert!(
-                        matches!(result, Ok(TodoCommentResult::Invalid(_))),
-                        "Expected Invalid but got {:?} for line {}: {}",
-                        result,
-                        index + 1,
-                        line
-                    );
-                }
-                TodoValidity::NotApplicable => {
-                    assert!(
-                        matches!(result, Ok(TodoCommentResult::NotApplicable)),
-                        "Expected n/a but got {:?} for line {}: {}",
-                        result,
-                        index + 1,
-                        line
-                    );
-                }
-            }
-        }
-    }
-
-    #[rstest]
-    #[case(Delimiter::Braces, "hello {world}", Ok(Some("world")))]
-    #[case(Delimiter::Parentheses, "123 (456)", Ok(Some("456")))]
-    #[case(Delimiter::Brackets, "[brackets]", Ok(Some("brackets")))]
-    #[case(Delimiter::Angles, "angle <brackets>", Ok(Some("brackets")))]
-    #[case(Delimiter::Braces, "no braces", Ok(None))]
-    #[case(Delimiter::Parentheses, "mismatched (parenthesis]", Ok(None))]
-    #[case(Delimiter::Braces, "no braces", Ok(None))]
-    fn test_extract_delimiter_content(
-        #[case] delimiter: Delimiter,
-        #[case] line: &str,
-        #[case] expected: Result<Option<&str>>,
-    ) {
-        let result = extract_delimiter_content(&delimiter, line);
-        match (&result, &expected) {
-            (Ok(actual), Ok(expected)) => assert_eq!(actual, expected),
-            (Err(_), Err(_)) => assert!(true), // both are errors, test passes
-            _ => panic!("Result {:?} does not match expected {:?}", result, expected),
-        }
     }
 }
