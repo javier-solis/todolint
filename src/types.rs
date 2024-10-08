@@ -80,3 +80,30 @@ pub enum CaptureGroupNames {
     MarkerContent,
     CommentContent,
 }
+
+#[derive(Debug, PartialEq)]
+pub enum Delimiter {
+    Parentheses,
+    Braces,
+    Brackets,
+    Angles,
+}
+
+impl Delimiter {
+    pub fn get_chars(&self) -> (char, char) {
+        match self {
+            Delimiter::Parentheses => ('(', ')'),
+            Delimiter::Braces => ('{', '}'),
+            Delimiter::Brackets => ('[', ']'),
+            Delimiter::Angles => ('<', '>'),
+        }
+    }
+    fn get_name(&self) -> &'static str {
+        match self {
+            Delimiter::Parentheses => "parentheses",
+            Delimiter::Braces => "braces",
+            Delimiter::Brackets => "brackets",
+            Delimiter::Angles => "angles",
+        }
+    }
+}
