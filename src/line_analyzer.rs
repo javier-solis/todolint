@@ -23,13 +23,13 @@ impl LineAnalyzer {
         Ok(LineAnalyzer {})
     }
 
-    pub fn process(&self, line: &str, line_number: usize) -> Result<TodoCommentResult> {
+    pub fn process(&self, line: &str, line_number: usize) -> Result<Option<TodoCommentResult>> {
         let validation_regex = Self::create_validation_regex(CommentMarker::Todo)
             .context("Failed to create validation regex")?;
 
         let general_cap = match validation_regex.captures(line) {
             Some(cap) => cap,
-            None => return Ok(TodoCommentResult::NotApplicable),
+            None => return Ok(None),
         };
 
         let marker_content = general_cap
@@ -68,20 +68,20 @@ impl LineAnalyzer {
                 }
             }
 
-            Ok(TodoCommentResult::Valid(ValidTodoComment {
+            Ok(Some(TodoCommentResult::Valid(ValidTodoComment {
                 line: line_number,
                 line_info: ValidContent {
                     comment: comment_content.to_string(),
                     delimiters,
                 },
-            }))
+            })))
         } else {
-            Ok(TodoCommentResult::Invalid(InvalidTodoComment {
+            Ok(Some(TodoCommentResult::Invalid(InvalidTodoComment {
                 line: line_number,
                 line_info: InvalidContent {
                     full_text: general_cap[0].to_string(),
                 },
-            }))
+            })))
         }
     }
 
@@ -194,7 +194,7 @@ mod tests {
             match validity {
                 TodoValidity::Valid => {
                     assert!(
-                        matches!(result, Ok(TodoCommentResult::Valid(_))),
+                        matches!(result, Ok(Some(TodoCommentResult::Valid(_)))),
                         "Expected Valid but got {:?} for line {}: {}",
                         result,
                         index + 1,
@@ -203,7 +203,7 @@ mod tests {
                 }
                 TodoValidity::Invalid => {
                     assert!(
-                        matches!(result, Ok(TodoCommentResult::Invalid(_))),
+                        matches!(result, Ok(Some(TodoCommentResult::Invalid(_)))),
                         "Expected Invalid but got {:?} for line {}: {}",
                         result,
                         index + 1,
@@ -212,7 +212,7 @@ mod tests {
                 }
                 TodoValidity::NotApplicable => {
                     assert!(
-                        matches!(result, Ok(TodoCommentResult::NotApplicable)),
+                        matches!(result, Ok(None)),
                         "Expected n/a but got {:?} for line {}: {}",
                         result,
                         index + 1,

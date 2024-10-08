@@ -65,15 +65,15 @@ fn analyze_file(filename: &str) -> Result<FileAnalysis> {
     for (line_number, line) in reader.lines().enumerate() {
         let line = line.context("Failed to read line")?;
 
-        let processed_line = line_analyzer_obj.process(&line, line_number)?;
-        match processed_line {
-            TodoCommentResult::Valid(comment) => {
-                file_analysis.valids.push(comment);
+        if let Some(processed_line) = line_analyzer_obj.process(&line, line_number)? {
+            match processed_line {
+                TodoCommentResult::Valid(comment) => {
+                    file_analysis.valids.push(comment);
+                }
+                TodoCommentResult::Invalid(comment) => {
+                    file_analysis.invalids.push(comment);
+                }
             }
-            TodoCommentResult::Invalid(comment) => {
-                file_analysis.invalids.push(comment);
-            }
-            _ => {}
         }
     }
 
