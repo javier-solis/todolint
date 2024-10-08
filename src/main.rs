@@ -1,25 +1,17 @@
 use anyhow::{Context, Result};
 use chrono::Utc;
-use regex::Regex;
 use std::{
     fs::File,
     io::{BufRead, BufReader},
 };
-use strum::IntoEnumIterator;
-use utils::{get_blame_info, print_json, print_todo_result};
+use utils::print_json;
 mod line_analyzer;
 mod types;
-use types::{
-    AnalysisResult, CaptureGroupNames, CommentMarker, Delimiter, DelimiterContent,
-    DirectoryAnalysis, FileAnalysis, FileMetadata, InvalidContent, InvalidTodoComment,
-    TodoCommentResult, ValidContent, ValidTodoComment,
-};
+use types::{AnalysisResult, DirectoryAnalysis, FileAnalysis, FileMetadata, TodoCommentResult};
 mod utils;
 use line_analyzer::LineAnalyzer;
 use std::path::Path;
 use walkdir::WalkDir;
-
-extern crate chrono;
 
 fn main() -> Result<()> {
     Ok(())
