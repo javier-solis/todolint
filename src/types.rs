@@ -81,6 +81,18 @@ pub enum CaptureGroupNames {
     CommentContent,
 }
 
+pub struct DelimiterChars {
+    open: char,
+    close: char,
+}
+
+impl DelimiterChars {
+    /// For quick destructuring.
+    pub fn to_tuple(&self) -> (char, char) {
+        (self.open, self.close)
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Delimiter {
     Parentheses,
@@ -89,16 +101,18 @@ pub enum Delimiter {
     Angles,
 }
 
+#[rustfmt::skip]
 impl Delimiter {
-    pub fn get_chars(&self) -> (char, char) {
+    pub fn get_chars(&self) -> DelimiterChars {
         match self {
-            Delimiter::Parentheses => ('(', ')'),
-            Delimiter::Braces => ('{', '}'),
-            Delimiter::Brackets => ('[', ']'),
-            Delimiter::Angles => ('<', '>'),
+            Delimiter::Parentheses => DelimiterChars { open: '(', close: ')' },
+            Delimiter::Braces => DelimiterChars { open: '{', close: '}' },
+            Delimiter::Brackets => DelimiterChars { open: '[', close: ']' },
+            Delimiter::Angles => DelimiterChars { open: '<', close: '>' },
         }
     }
-    fn get_name(&self) -> &'static str {
+
+    pub fn get_name(&self) -> &'static str {
         match self {
             Delimiter::Parentheses => "parentheses",
             Delimiter::Braces => "braces",
