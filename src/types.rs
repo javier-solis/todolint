@@ -1,7 +1,8 @@
 use chrono::{DateTime, Utc};
 use email_address::EmailAddress;
 use serde::Serialize;
-use strum_macros::{AsRefStr, Display};
+use strum_macros::{AsRefStr, Display, EnumIter};
+
 
 #[derive(Serialize, Debug)]
 pub enum AnalysisResult {
@@ -93,7 +94,7 @@ impl DelimiterChars {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, EnumIter)]
 pub enum Delimiter {
     Parentheses,
     Braces,

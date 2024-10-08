@@ -5,12 +5,14 @@ use std::{
     fs::File,
     io::{BufRead, BufReader},
 };
-use utils::{print_todo_result, print_todo_result_json};
+use strum::IntoEnumIterator;
+use utils::{get_blame_info, print_json, print_todo_result};
+mod line_analyzer;
 mod types;
 use types::{
-    AnalysisResult, CaptureGroupNames, CommentMarker, DelimiterContent, DirectoryAnalysis,
-    FileAnalysis, FileMetadata, InvalidContent, InvalidTodoComment, TodoCommentResult,
-    ValidContent, ValidTodoComment,
+    AnalysisResult, CaptureGroupNames, CommentMarker, Delimiter, DelimiterContent,
+    DirectoryAnalysis, FileAnalysis, FileMetadata, InvalidContent, InvalidTodoComment,
+    TodoCommentResult, ValidContent, ValidTodoComment,
 };
 mod utils;
 use std::path::Path;
@@ -116,17 +118,11 @@ fn process_line(line: &str, line_number: usize) -> Result<TodoCommentResult> {
 
     if validate_todo(marker_content).unwrap_or(false) {
         let mut delimiters = Vec::new();
-        let delimiter_types = [
-            ("()", "parens"),
-            ("{}", "braces"),
-            ("[]", "brackets"),
-            ("<>", "angles"),
-        ];
 
-        for (delim, delim_type) in delimiter_types.iter() {
-            if let Ok(Some(content)) = extract_delimiter_content(delim, marker_content) {
+        for delimiter in Delimiter::iter() {
+            if let Ok(Some(content)) = extract_delimiter_content(&delimiter, marker_content) {
                 delimiters.push(DelimiterContent {
-                    delimiter_type: delim_type.to_string(),
+                    delimiter_type: delimiter.get_name().to_string(),
                     content: content.to_string(),
                 });
             }
@@ -213,12 +209,13 @@ fn validate_todo(todo_content: &str) -> Result<bool> {
 
 /// Extracts content between specified delimiter characters in a given line of text.
 /// Returns None if no valid delimited content is found.
-fn extract_delimiter_content<'a>(delimiter: &str, line: &'a str) -> Result<Option<&'a str>> {
-    let pattern = if delimiter == "<>" {
-        r"<(.*?)>".to_string()
+fn extract_delimiter_content<'a>(delimiter: &Delimiter, line: &'a str) -> Result<Option<&'a str>> {
+    let chars = delimiter.get_chars();
+    let (open_delim, close_delim) = chars.to_tuple();
+
+    let pattern = if *delimiter == Delimiter::Angles {
+        format!(r"{}(.*?){}", open_delim, close_delim)
     } else {
-        let open_delim = delimiter.chars().next().context("Empty delimiter")?;
-        let close_delim = delimiter.chars().last().context("Empty delimiter")?;
         format!(r"\{}(.*?)\{}", open_delim, close_delim)
     };
 
@@ -320,19 +317,19 @@ mod tests {
     }
 
     #[rstest]
-    #[case("{}", "hello {world}", Ok(Some("world")))]
-    #[case("()", "123 (456)", Ok(Some("456")))]
-    #[case("[]", "[brackets]", Ok(Some("brackets")))]
-    #[case("<>", "angle <brackets>", Ok(Some("brackets")))]
-    #[case("{}", "no braces", Ok(None))]
-    #[case("()", "mismatched (parenthesis]", Ok(None))]
-    #[case("{}", "no braces", Ok(None))]
+    #[case(Delimiter::Braces, "hello {world}", Ok(Some("world")))]
+    #[case(Delimiter::Parentheses, "123 (456)", Ok(Some("456")))]
+    #[case(Delimiter::Brackets, "[brackets]", Ok(Some("brackets")))]
+    #[case(Delimiter::Angles, "angle <brackets>", Ok(Some("brackets")))]
+    #[case(Delimiter::Braces, "no braces", Ok(None))]
+    #[case(Delimiter::Parentheses, "mismatched (parenthesis]", Ok(None))]
+    #[case(Delimiter::Braces, "no braces", Ok(None))]
     fn test_extract_delimiter_content(
-        #[case] delimiter: &str,
+        #[case] delimiter: Delimiter,
         #[case] line: &str,
         #[case] expected: Result<Option<&str>>,
     ) {
-        let result = extract_delimiter_content(delimiter, line);
+        let result = extract_delimiter_content(&delimiter, line);
         match (&result, &expected) {
             (Ok(actual), Ok(expected)) => assert_eq!(actual, expected),
             (Err(_), Err(_)) => assert!(true), // both are errors, test passes
