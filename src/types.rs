@@ -60,7 +60,7 @@ pub struct InvalidContent {
 
 #[derive(Serialize, Debug)]
 pub struct DelimiterContent {
-    pub delimiter_type: String,
+    pub delimiter_type: Delimiter,
     pub content: String,
 }
 
@@ -94,7 +94,7 @@ impl DelimiterChars {
     }
 }
 
-#[derive(Debug, PartialEq, EnumIter)]
+#[derive(Serialize, Debug, PartialEq, EnumIter)]
 pub enum Delimiter {
     Parentheses,
     Braces,

@@ -62,7 +62,7 @@ impl LineAnalyzer {
                     Self::extract_delimiter_content(&delimiter, marker_content)
                 {
                     delimiters.push(DelimiterContent {
-                        delimiter_type: delimiter.get_name().to_string(),
+                        delimiter_type: delimiter,
                         content: content.to_string(),
                     });
                 }

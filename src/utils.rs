@@ -26,12 +26,12 @@ pub fn print_todo_result(result: &Result<TodoCommentResult>) {
                         .line_info
                         .delimiters
                         .iter()
-                        .map(|d| d.delimiter_type.as_str())
+                        .map(|d| d.delimiter_type.get_name())
                         .collect::<Vec<_>>()
                 );
                 for delimiter in &comment.line_info.delimiters {
                     println!(
-                        "\tContents of {}: {}",
+                        "\tContents of {:#?}: {}",
                         delimiter.delimiter_type, delimiter.content
                     );
                 }
