@@ -243,4 +243,27 @@ mod tests {
             _ => panic!("Result {:?} does not match expected {:?}", result, expected),
         }
     }
+
+    #[rstest]
+    #[case(CommentMarker::Todo, "// todo: valid", true)]
+    #[case(CommentMarker::Todo, "//todo      : valid", true)]
+    #[case(CommentMarker::Todo, "//         todo      : valid", true)]
+    #[case(CommentMarker::Todo, "// TODO: invalid", false)]
+    #[case(CommentMarker::Todo, "// todo this is missing a colon", false)]
+    #[case(CommentMarker::Todo, "/ todo: missing a slash", false)]
+    #[case(CommentMarker::Todo, "// todo:", false)] // (missing comment content)
+    #[case(CommentMarker::Todo, "// todox: This should not match", false)]
+    fn test_create_validation_regex(
+        #[case] marker: CommentMarker,
+        #[case] input: &str,
+        #[case] should_match: bool,
+    ) {
+        let regex = LineAnalyzer::create_validation_regex(marker).unwrap();
+        assert_eq!(
+            regex.is_match(input),
+            should_match,
+            "Regex match failed for input '{}'",
+            input,
+        );
+    }
 }
