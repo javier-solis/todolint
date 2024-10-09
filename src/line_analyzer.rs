@@ -15,17 +15,19 @@ struct GitBlameContext {
 pub struct LineAnalyzer {
     // todo: use these attributes
     // git_blame_context: Option<GitBlameContext>,
-    // validation_regex: Regex,
+    validation_regex: Regex,
 }
 
 impl LineAnalyzer {
     pub fn new() -> Result<Self> {
-        Ok(LineAnalyzer {})
+        // todo: add CommentMarker as a param?
+        Ok(LineAnalyzer {
+            validation_regex: Self::create_validation_regex(CommentMarker::Todo)?,
+        })
     }
 
     pub fn process(&self, line: &str, line_number: usize) -> Result<Option<TodoCommentResult>> {
-        let validation_regex = Self::create_validation_regex(CommentMarker::Todo)
-            .context("Failed to create validation regex")?;
+        let validation_regex = &self.validation_regex;
 
         let general_cap = match validation_regex.captures(line) {
             Some(cap) => cap,
