@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use email_address::EmailAddress;
 use serde::Serialize;
+use std::path::PathBuf;
 use strum_macros::{AsRefStr, Display, EnumIter};
 
 
@@ -26,7 +27,7 @@ pub struct FileAnalysis {
 
 #[derive(Serialize, Debug)]
 pub struct FileMetadata {
-    pub filepath: String,
+    pub filepath: PathBuf,
     pub last_modified: DateTime<Utc>,
 }
 

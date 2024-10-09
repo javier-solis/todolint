@@ -33,7 +33,7 @@ fn analyze_dir(dir: &Path) -> DirectoryAnalysis {
         .filter(|entry| entry.file_type().is_file())
         .filter_map(|entry| {
             let path = entry.path();
-            analyze_file(path.to_str()?).ok()
+            analyze_file(path).ok()
         })
         .collect();
 
@@ -46,14 +46,15 @@ fn analyze_dir(dir: &Path) -> DirectoryAnalysis {
     }
 }
 
-fn analyze_file(filename: &str) -> Result<FileAnalysis> {
-    let file = File::open(filename).context("Failed to open file")?;
+fn analyze_file(filepath: &Path) -> Result<FileAnalysis> {
+    let file = File::open(filepath).context("Failed to open file")?;
     let metadata = file.metadata().context("Failed to get file metadata")?;
     let reader = BufReader::new(file);
 
+    // todo: create with a FileAnalysis::new?
     let mut file_analysis = FileAnalysis {
         metadata: FileMetadata {
-            filepath: filename.to_string(),
+            filepath: filepath.to_path_buf(),
             last_modified: metadata.modified()?.into(),
         },
         valids: Vec::new(),
@@ -97,7 +98,7 @@ mod tests {
 
     #[test]
     fn test_analyze_file_valid() -> Result<()> {
-        let filename = "test/valid.txt";
+        let filename = Path::new("test/valid.txt");
         let analysis = analyze_file(filename)?;
 
         assert_eq!(analysis.invalids.len(), 0, "Expected no invalid todos");
@@ -106,7 +107,7 @@ mod tests {
 
     #[test]
     fn test_analyze_file_invalid() -> Result<()> {
-        let filename = "test/invalid.txt";
+        let filename = Path::new("test/invalid.txt");
         let analysis = analyze_file(filename)?;
 
         assert_eq!(analysis.valids.len(), 0, "Expected no valid todos");
