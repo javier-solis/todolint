@@ -1,12 +1,11 @@
+use crate::line_analyzer_types::{
+    CaptureGroupNames, CommentMarker, Delimiter, DelimiterContent, InvalidContent,
+    InvalidTodoComment, TodoCommentResult, ValidContent, ValidTodoComment,
+};
 use anyhow::{Context, Result};
 use git2::Repository;
 use regex::Regex;
 use strum::IntoEnumIterator;
-
-use crate::types::{
-    CaptureGroupNames, CommentMarker, Delimiter, DelimiterContent, InvalidContent,
-    InvalidTodoComment, TodoCommentResult, ValidContent, ValidTodoComment,
-};
 
 struct GitBlameContext {
     repo: Repository, // todo: add an option to specify specific branch?

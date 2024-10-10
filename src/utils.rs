@@ -6,7 +6,7 @@ use std::{path::Path, str::FromStr};
 
 use serde_json;
 
-use crate::types::{BlameInfo, TodoCommentResult};
+use crate::line_analyzer_types::{BlameInfo, TodoCommentResult};
 
 pub fn print_json<T: serde::Serialize>(item: &T) {
     let json = serde_json::to_string_pretty(item).unwrap();
