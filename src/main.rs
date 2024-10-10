@@ -6,8 +6,8 @@ use std::{
 };
 use utils::print_json;
 mod line_analyzer;
-mod types;
-use types::{AnalysisResult, DirectoryAnalysis, FileAnalysis, FileMetadata};
+mod path_analyzer_types;
+use path_analyzer_types::{AnalysisResult, DirectoryAnalysis, FileAnalysis, FileMetadata};
 mod line_analyzer_types;
 use line_analyzer_types::TodoCommentResult;
 mod utils;
