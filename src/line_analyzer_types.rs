@@ -22,8 +22,8 @@ pub struct TodoCommentBase<T> {
     pub line: usize,
     #[serde(flatten)]
     pub line_info: T,
-    // #[serde(flatten)]
-    // pub blame_info: Option<BlameInfo>,
+    #[serde(flatten)]
+    pub blame_info: Option<BlameInfo>,
 }
 
 #[derive(Serialize, Debug)]
@@ -105,7 +105,7 @@ impl Delimiter {
 }
 
 impl BlameInfo {
-    pub fn new(file_blame_context: FileBlameContext, line_number: usize) -> Result<BlameInfo> {
+    pub fn new(file_blame_context: &FileBlameContext, line_number: usize) -> Result<BlameInfo> {
         // Get hunk for the specified line, then retrieve the corresponding commit
         let hunk = file_blame_context
             .blame

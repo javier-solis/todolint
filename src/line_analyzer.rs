@@ -1,6 +1,6 @@
 use crate::{
     line_analyzer_types::{
-        CaptureGroupNames, CommentMarker, Delimiter, DelimiterContent, InvalidContent,
+        BlameInfo, CaptureGroupNames, CommentMarker, Delimiter, DelimiterContent, InvalidContent,
         InvalidTodoComment, TodoCommentResult, ValidContent, ValidTodoComment,
     },
     path_analyzer_types::FileBlameContext,
@@ -16,6 +16,7 @@ pub struct LineAnalyzer<'fileblamecontext> {
 }
 
 impl<'fileblamecontext> LineAnalyzer<'fileblamecontext> {
+    /// If no `FileBlameContext` available, input the param as `None`.
     pub fn new(git_blame_context: Option<&'fileblamecontext FileBlameContext>) -> Result<Self> {
         // todo: add CommentMarker as a param?
         Ok(LineAnalyzer {
@@ -56,7 +57,15 @@ impl<'fileblamecontext> LineAnalyzer<'fileblamecontext> {
 
         let line_number = line_number + 1; // for human readable purposes
 
-        if Self::validate(marker_content).unwrap_or(false) {
+        let blame_info = self.git_blame_context.and_then(|context| {
+            BlameInfo::new(context, line_number)
+                .map_err(|err| {
+                    // todo: log potential errors here
+                })
+                .ok()
+        });
+
+        if Self::validate(marker_content)? {
             let mut delimiters = Vec::new();
 
             for delimiter in Delimiter::iter() {
@@ -76,6 +85,7 @@ impl<'fileblamecontext> LineAnalyzer<'fileblamecontext> {
                     comment: comment_content.to_string(),
                     delimiters,
                 },
+                blame_info,
             })))
         } else {
             Ok(Some(TodoCommentResult::Invalid(InvalidTodoComment {
@@ -83,6 +93,7 @@ impl<'fileblamecontext> LineAnalyzer<'fileblamecontext> {
                 line_info: InvalidContent {
                     full_text: general_cap[0].to_string(),
                 },
+                blame_info,
             })))
         }
     }
