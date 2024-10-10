@@ -1,30 +1,31 @@
-use crate::line_analyzer_types::{
-    CaptureGroupNames, CommentMarker, Delimiter, DelimiterContent, InvalidContent,
-    InvalidTodoComment, TodoCommentResult, ValidContent, ValidTodoComment,
+use crate::{
+    line_analyzer_types::{
+        CaptureGroupNames, CommentMarker, Delimiter, DelimiterContent, InvalidContent,
+        InvalidTodoComment, TodoCommentResult, ValidContent, ValidTodoComment,
+    },
+    path_analyzer_types::FileBlameContext,
 };
 use anyhow::{Context, Result};
-use git2::Repository;
 use regex::Regex;
 use strum::IntoEnumIterator;
 
-struct GitBlameContext {
-    repo: Repository, // todo: add an option to specify specific branch?
-}
-
-pub struct LineAnalyzer {
+pub struct LineAnalyzer<'fileblamecontext> {
     // todo: use these attributes
-    // git_blame_context: Option<GitBlameContext>,
+    git_blame_context: Option<&'fileblamecontext FileBlameContext<'fileblamecontext>>,
     validation_regex: Regex,
 }
 
-impl LineAnalyzer {
-    pub fn new() -> Result<Self> {
+impl<'fileblamecontext> LineAnalyzer<'fileblamecontext> {
+    pub fn new(git_blame_context: Option<&'fileblamecontext FileBlameContext>) -> Result<Self> {
         // todo: add CommentMarker as a param?
         Ok(LineAnalyzer {
             validation_regex: Self::create_validation_regex(CommentMarker::Todo)?,
+            git_blame_context: git_blame_context.map(|context| context),
         })
     }
 
+    /// Processes a line of text and determines if it contains a valid marked comment while also
+    /// extracting the returning a `TodoCommentResult` with the a valid or invalid construct.
     pub fn process(&self, line: &str, line_number: usize) -> Result<Option<TodoCommentResult>> {
         let validation_regex = &self.validation_regex;
 
@@ -189,7 +190,7 @@ mod tests {
     #[case::na(read_test_file("test/na.txt"), TodoValidity::NotApplicable)]
     fn test_process_line(#[case] lines: Vec<String>, #[case] validity: TodoValidity) {
         for (index, line) in lines.iter().enumerate() {
-            let line_analyzer_obj = LineAnalyzer::new().unwrap();
+            let line_analyzer_obj = LineAnalyzer::new(None).unwrap();
             let result = line_analyzer_obj.process(line, index);
 
             match validity {

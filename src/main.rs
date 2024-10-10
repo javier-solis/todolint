@@ -63,7 +63,7 @@ fn analyze_file(filepath: &Path) -> Result<FileAnalysis> {
         invalids: Vec::new(),
     };
 
-    let line_analyzer_obj = LineAnalyzer::new()?;
+    let line_analyzer_obj = LineAnalyzer::new(None)?;
 
     for (line_number, line) in reader.lines().enumerate() {
         let line = line.context("Failed to read line")?;
