@@ -1,6 +1,9 @@
-use chrono::{DateTime, Utc};
+use anyhow::{Context, Result};
+use chrono::{DateTime, TimeZone, Utc};
 use email_address::EmailAddress;
+use git2::{BlameOptions, Repository};
 use serde::Serialize;
+use std::{path::Path, str::FromStr};
 use strum_macros::{AsRefStr, Display, EnumIter};
 
 // == Types ==
@@ -98,5 +101,41 @@ impl Delimiter {
             Delimiter::Brackets => "brackets",
             Delimiter::Angles => "angles",
         }
+    }
+}
+
+impl BlameInfo {
+    fn new(file_path: &Path, line_number: usize) -> Result<BlameInfo> {
+        let repo = Repository::discover(file_path)
+            .with_context(|| format!("Failed to discover repository for file {:?}", file_path))?;
+
+        // Get blame information for the specified file and line, then retrieve the corresponding commit
+        let mut blame_opts = BlameOptions::new();
+        let blame = repo
+            .blame_file(file_path, Some(&mut blame_opts))
+            .with_context(|| format!("Failed to get blame for file {:?}", file_path))?;
+        let hunk = blame
+            .get_line(line_number)
+            .with_context(|| format!("No blame information found for line {}", line_number))?;
+        let commit_id = hunk.final_commit_id();
+        let commit = repo
+            .find_commit(commit_id)
+            .with_context(|| format!("Failed to find commit {}", commit_id))?;
+
+        // From commit, extract author email and timestamp
+        let author_email = commit
+            .author()
+            .email()
+            .and_then(|email| EmailAddress::from_str(email).ok())
+            .unwrap_or_else(|| EmailAddress::new_unchecked("unknown@example.com"));
+        let timestamp = Utc
+            .timestamp_opt(commit.time().seconds(), 0)
+            .single()
+            .with_context(|| format!("Invalid timestamp: {}", commit.time().seconds()))?;
+
+        Ok(BlameInfo {
+            email: author_email,
+            timestamp,
+        })
     }
 }
