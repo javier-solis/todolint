@@ -6,8 +6,12 @@ use std::{
 };
 use utils::print_json;
 mod line_analyzer;
+mod path_analyzer;
 mod path_analyzer_types;
-use path_analyzer_types::{AnalysisResult, DirectoryAnalysis, FileAnalysis, FileMetadata};
+use path_analyzer_types::{
+    AnalysisResult, DirectoryAnalysis, FileAnalysis, FileAnalysisConfig, FileBlameContext,
+    FileMetadata,
+};
 mod line_analyzer_types;
 use line_analyzer_types::TodoCommentResult;
 mod utils;
@@ -16,26 +20,37 @@ use std::path::Path;
 use walkdir::WalkDir;
 
 fn main() -> Result<()> {
+    let path = Path::new("test/one_valid.txt");
+    let analysis = analyze_path(&path)?;
+    print_json(&analysis);
+
     Ok(())
 }
 fn analyze_path(path: &Path) -> Result<AnalysisResult> {
     if path.is_dir() {
         Ok(AnalysisResult::Directory(analyze_dir(path)))
     } else if path.is_file() {
-        Ok(AnalysisResult::File(analyze_file(path.to_str().unwrap())?))
+        let file_analysis_config = FileAnalysisConfig::default();
+
+        Ok(AnalysisResult::File(analyze_file(
+            path,
+            &file_analysis_config,
+        )?))
     } else {
         Err(anyhow::anyhow!("Path is neither a file nor a directory"))
     }
 }
 
 fn analyze_dir(dir: &Path) -> DirectoryAnalysis {
+    let file_analysis_config = FileAnalysisConfig::default();
+
     let file_analyses: Vec<FileAnalysis> = WalkDir::new(dir)
         .into_iter()
         .filter_map(|entry| entry.ok())
         .filter(|entry| entry.file_type().is_file())
         .filter_map(|entry| {
             let path = entry.path();
-            analyze_file(path).ok()
+            analyze_file(path, &file_analysis_config).ok()
         })
         .collect();
 
@@ -48,7 +63,7 @@ fn analyze_dir(dir: &Path) -> DirectoryAnalysis {
     }
 }
 
-fn analyze_file(filepath: &Path) -> Result<FileAnalysis> {
+fn analyze_file(filepath: &Path, config: &FileAnalysisConfig) -> Result<FileAnalysis> {
     let file = File::open(filepath).context("Failed to open file")?;
     let metadata = file.metadata().context("Failed to get file metadata")?;
     let reader = BufReader::new(file);
@@ -63,7 +78,11 @@ fn analyze_file(filepath: &Path) -> Result<FileAnalysis> {
         invalids: Vec::new(),
     };
 
-    let line_analyzer_obj = LineAnalyzer::new(None)?;
+    let file_blame_context = config
+        .repo
+        .and_then(|repo| FileBlameContext::new(repo, filepath).ok());
+
+    let line_analyzer_obj = LineAnalyzer::new(file_blame_context.as_ref())?;
 
     for (line_number, line) in reader.lines().enumerate() {
         let line = line.context("Failed to read line")?;
@@ -101,7 +120,8 @@ mod tests {
     #[test]
     fn test_analyze_file_valid() -> Result<()> {
         let filename = Path::new("test/valid.txt");
-        let analysis = analyze_file(filename)?;
+        let file_analysis_config = FileAnalysisConfig::default();
+        let analysis = analyze_file(filename, &file_analysis_config)?;
 
         assert_eq!(analysis.invalids.len(), 0, "Expected no invalid todos");
         Ok(())
@@ -110,7 +130,8 @@ mod tests {
     #[test]
     fn test_analyze_file_invalid() -> Result<()> {
         let filename = Path::new("test/invalid.txt");
-        let analysis = analyze_file(filename)?;
+        let file_analysis_config = FileAnalysisConfig::default();
+        let analysis = analyze_file(filename, &file_analysis_config)?;
 
         assert_eq!(analysis.valids.len(), 0, "Expected no valid todos");
         Ok(())

@@ -39,6 +39,14 @@ pub struct FileBlameContext<'repo> {
     pub blame: Blame<'repo>,
 }
 
+/// Options for file analysis, wrapped in Option to indicate availability and user-enabled status
+/// as determined by the parent entity.
+pub struct FileAnalysisConfig<'a> {
+    pub repo: Option<&'a Repository>,
+    // todo: add filepath as an attribute? would it be have to be Optional?
+}
+
+
 impl<'repo> FileBlameContext<'repo> {
     // todo: I don't like that Repository is a param, but its that way bc of ownership rules
     // refactor in the future
@@ -47,5 +55,11 @@ impl<'repo> FileBlameContext<'repo> {
         let blame = repo.blame_file(file_path, Some(&mut blame_opts))?;
 
         Ok(FileBlameContext { repo, blame })
+    }
+}
+
+impl<'a> Default for FileAnalysisConfig<'a> {
+    fn default() -> Self {
+        Self { repo: None }
     }
 }
