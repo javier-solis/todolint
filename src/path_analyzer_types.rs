@@ -43,7 +43,16 @@ pub struct FileBlameContext<'repo> {
 /// as determined by the parent entity.
 pub struct FileAnalysisConfig<'a> {
     pub repo: Option<&'a Repository>,
-    // todo: add filepath as an attribute? would it be have to be Optional?
+    /// Additional file extensions to include. Do not include the leading dot.
+    pub include_files: Option<&'static [&'static str]>,
+}
+
+/// Options for directory analysis, wrapped in Option to indicate availability and user-enabled
+/// status as determined by the parent entity.
+pub struct DirAnalysisConfig<'a> {
+    pub file_analysis_config: FileAnalysisConfig<'a>,
+    // Directories to exclude, relative to the root of the project.
+    pub exclude_dirs: Option<&'static [&'static str]>,
 }
 
 
@@ -60,6 +69,18 @@ impl<'repo> FileBlameContext<'repo> {
 
 impl<'a> Default for FileAnalysisConfig<'a> {
     fn default() -> Self {
-        Self { repo: None }
+        Self {
+            repo: None,
+            include_files: None,
+        }
+    }
+}
+
+impl<'a> Default for DirAnalysisConfig<'a> {
+    fn default() -> Self {
+        Self {
+            file_analysis_config: FileAnalysisConfig::default(),
+            exclude_dirs: None,
+        }
     }
 }
