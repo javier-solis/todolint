@@ -9,8 +9,8 @@ mod line_analyzer;
 mod path_analyzer;
 mod path_analyzer_types;
 use path_analyzer_types::{
-    AnalysisResult, DirectoryAnalysis, FileAnalysis, FileAnalysisConfig, FileBlameContext,
-    FileMetadata,
+    AnalysisResult, DirAnalysisConfig, DirectoryAnalysis, FileAnalysis, FileAnalysisConfig,
+    FileBlameContext, FileMetadata,
 };
 mod line_analyzer_types;
 use line_analyzer_types::TodoCommentResult;
@@ -26,9 +26,16 @@ fn main() -> Result<()> {
 
     Ok(())
 }
+
+/// Entry point function.
 fn analyze_path(path: &Path) -> Result<AnalysisResult> {
     if path.is_dir() {
-        Ok(AnalysisResult::Directory(analyze_dir(path)))
+        let dir_analysis_config = DirAnalysisConfig::default();
+
+        Ok(AnalysisResult::Directory(analyze_dir(
+            path,
+            &dir_analysis_config,
+        )))
     } else if path.is_file() {
         let file_analysis_config = FileAnalysisConfig::default();
 
@@ -41,16 +48,14 @@ fn analyze_path(path: &Path) -> Result<AnalysisResult> {
     }
 }
 
-fn analyze_dir(dir: &Path) -> DirectoryAnalysis {
-    let file_analysis_config = FileAnalysisConfig::default();
-
-    let file_analyses: Vec<FileAnalysis> = WalkDir::new(dir)
+fn analyze_dir(dirpath: &Path, dir_analysis_config: &DirAnalysisConfig) -> DirectoryAnalysis {
+    let file_analyses: Vec<FileAnalysis> = WalkDir::new(dirpath)
         .into_iter()
         .filter_map(|entry| entry.ok())
         .filter(|entry| entry.file_type().is_file())
         .filter_map(|entry| {
             let path = entry.path();
-            analyze_file(path, &file_analysis_config).ok()
+            analyze_file(path, &dir_analysis_config.file_analysis_config).ok()
         })
         .collect();
 
@@ -109,7 +114,8 @@ mod tests {
     #[test]
     fn test_analyze_dir() -> Result<()> {
         let test_dir = Path::new("test");
-        let result = analyze_dir(test_dir);
+        let dir_analysis_config = DirAnalysisConfig::default();
+        let result = analyze_dir(test_dir, &dir_analysis_config);
 
         let json = serde_json::to_string_pretty(&result)?;
         println!("{}", json);
