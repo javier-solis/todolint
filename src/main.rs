@@ -80,8 +80,8 @@ fn analyze_file(filepath: &Path, config: &FileAnalysisConfig) -> Result<FileAnal
             filepath: filepath.to_path_buf(),
             last_modified: metadata.modified()?.into(),
         },
-        valids: Vec::new(),
-        invalids: Vec::new(),
+        valids: None,
+        invalids: None,
     };
 
     let file_blame_context = config
@@ -96,10 +96,16 @@ fn analyze_file(filepath: &Path, config: &FileAnalysisConfig) -> Result<FileAnal
         if let Some(processed_line) = line_analyzer_obj.process(&line, line_number)? {
             match processed_line {
                 TodoCommentResult::Valid(comment) => {
-                    file_analysis.valids.push(comment);
+                    file_analysis
+                        .valids
+                        .get_or_insert_with(Vec::new)
+                        .push(comment);
                 }
                 TodoCommentResult::Invalid(comment) => {
-                    file_analysis.invalids.push(comment);
+                    file_analysis
+                        .invalids
+                        .get_or_insert_with(Vec::new)
+                        .push(comment);
                 }
             }
         }

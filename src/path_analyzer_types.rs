@@ -22,8 +22,8 @@ pub struct DirectoryAnalysis {
 #[derive(Serialize, Debug)]
 pub struct FileAnalysis {
     pub metadata: FileMetadata,
-    pub valids: Vec<ValidTodoComment>,
-    pub invalids: Vec<InvalidTodoComment>,
+    pub valids: Option<Vec<ValidTodoComment>>,
+    pub invalids: Option<Vec<InvalidTodoComment>>,
 }
 
 #[derive(Serialize, Debug)]
