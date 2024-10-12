@@ -55,6 +55,20 @@ pub struct DirAnalysisConfig<'a> {
     pub exclude_dirs: Option<&'static [&'static str]>,
 }
 
+/// Options for project analysis.
+pub struct AnalysisConfig<'a> {
+    pub dir_analysis_config: DirAnalysisConfig<'a>,
+    pub file_analysis_config: FileAnalysisConfig<'a>,
+}
+
+impl<'a> Default for AnalysisConfig<'a> {
+    fn default() -> Self {
+        Self {
+            dir_analysis_config: DirAnalysisConfig::default(),
+            file_analysis_config: FileAnalysisConfig::default(),
+        }
+    }
+}
 
 impl<'repo> FileBlameContext<'repo> {
     // todo: I don't like that Repository is a param, but its that way bc of ownership rules

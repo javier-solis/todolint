@@ -9,8 +9,8 @@ mod line_analyzer;
 mod path_analyzer;
 mod path_analyzer_types;
 use path_analyzer_types::{
-    AnalysisResult, DirAnalysisConfig, DirectoryAnalysis, FileAnalysis, FileAnalysisConfig,
-    FileBlameContext, FileMetadata,
+    AnalysisConfig, AnalysisResult, DirAnalysisConfig, DirectoryAnalysis, FileAnalysis,
+    FileAnalysisConfig, FileBlameContext, FileMetadata,
 };
 mod line_analyzer_types;
 use line_analyzer_types::TodoCommentResult;
@@ -21,23 +21,24 @@ use walkdir::WalkDir;
 
 fn main() -> Result<()> {
     let path = Path::new("test/one_valid.txt");
-    let analysis = analyze_path(&path)?;
+    let analysis_config = AnalysisConfig::default();
+    let analysis = analyze_path(&path, &analysis_config)?;
     print_json(&analysis);
 
     Ok(())
 }
 
 /// Entry point function.
-fn analyze_path(path: &Path) -> Result<AnalysisResult> {
+fn analyze_path(path: &Path, analysis_config: &AnalysisConfig) -> Result<AnalysisResult> {
     if path.is_dir() {
-        let dir_analysis_config = DirAnalysisConfig::default();
+        let dir_analysis_config = &analysis_config.dir_analysis_config;
 
         Ok(AnalysisResult::Directory(analyze_dir(
             path,
             &dir_analysis_config,
         )))
     } else if path.is_file() {
-        let file_analysis_config = FileAnalysisConfig::default();
+        let file_analysis_config = &analysis_config.file_analysis_config;
 
         Ok(AnalysisResult::File(analyze_file(
             path,
