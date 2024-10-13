@@ -136,7 +136,7 @@ mod tests {
         let file_analysis_config = FileAnalysisConfig::default();
         let analysis = analyze_file(filename, &file_analysis_config)?;
 
-        assert_eq!(analysis.invalids.len(), 0, "Expected no invalid todos");
+        assert!(analysis.invalids.is_none(), "Expected no invalid todos");
         Ok(())
     }
 
@@ -146,7 +146,7 @@ mod tests {
         let file_analysis_config = FileAnalysisConfig::default();
         let analysis = analyze_file(filename, &file_analysis_config)?;
 
-        assert_eq!(analysis.valids.len(), 0, "Expected no valid todos");
+        assert!(analysis.valids.is_none(), "Expected no valid todos");
         Ok(())
     }
 }
