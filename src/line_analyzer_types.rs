@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use chrono::{DateTime, TimeZone, Utc};
 use email_address::EmailAddress;
 use serde::Serialize;
-use std::{path::Path, str::FromStr};
+use std::str::FromStr;
 use strum_macros::{AsRefStr, Display, EnumIter};
 
 // == Types ==

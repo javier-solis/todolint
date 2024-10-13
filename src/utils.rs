@@ -1,12 +1,6 @@
-use anyhow::{Context, Result};
-use chrono::{DateTime, TimeZone, Utc};
-use email_address::EmailAddress;
-use git2::{BlameOptions, Repository};
-use std::{path::Path, str::FromStr};
-
+use crate::line_analyzer_types::TodoCommentResult;
+use anyhow::Result;
 use serde_json;
-
-use crate::line_analyzer_types::{BlameInfo, TodoCommentResult};
 
 pub fn print_json<T: serde::Serialize>(item: &T) {
     let json = serde_json::to_string_pretty(item).unwrap();
