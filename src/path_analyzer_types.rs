@@ -22,7 +22,9 @@ pub struct DirectoryAnalysis {
 #[derive(Serialize, Debug)]
 pub struct FileAnalysis {
     pub metadata: FileMetadata,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub valids: Option<Vec<ValidTodoComment>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub invalids: Option<Vec<InvalidTodoComment>>,
 }
 
