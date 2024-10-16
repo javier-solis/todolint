@@ -81,6 +81,11 @@ impl<'repo> FileBlameContext<'repo> {
     }
 }
 
+/// Trait for creating a new instance of a type from a reference to itself.
+pub trait FromRef<'a> {
+    fn from_ref(t: &'a Self) -> Self;
+}
+
 impl<'a> Default for FileAnalysisConfig<'a> {
     fn default() -> Self {
         Self {
@@ -90,11 +95,29 @@ impl<'a> Default for FileAnalysisConfig<'a> {
     }
 }
 
+impl<'a> FromRef<'a> for FileAnalysisConfig<'a> {
+    fn from_ref(config: &'a Self) -> Self {
+        Self {
+            repo: config.repo,
+            include_files: config.include_files,
+        }
+    }
+}
+
 impl<'a> Default for DirAnalysisConfig<'a> {
     fn default() -> Self {
         Self {
             file_analysis_config: FileAnalysisConfig::default(),
             exclude_dirs: None,
+        }
+    }
+}
+
+impl<'a> FromRef<'a> for DirAnalysisConfig<'a> {
+    fn from_ref(config: &'a Self) -> Self {
+        Self {
+            file_analysis_config: FileAnalysisConfig::from_ref(&config.file_analysis_config),
+            exclude_dirs: config.exclude_dirs,
         }
     }
 }
