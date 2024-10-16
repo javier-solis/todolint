@@ -70,6 +70,15 @@ impl<'a> Default for AnalysisConfig<'a> {
     }
 }
 
+impl<'a> AnalysisConfig<'a> {
+    pub fn new_from_dir_config(dir_config: &'a DirAnalysisConfig<'a>) -> Self {
+        Self {
+            dir_analysis_config: DirAnalysisConfig::from_ref(dir_config),
+            file_analysis_config: FileAnalysisConfig::from_ref(&dir_config.file_analysis_config),
+        }
+    }
+}
+
 impl<'repo> FileBlameContext<'repo> {
     // todo: I don't like that Repository is a param, but its that way bc of ownership rules
     // refactor in the future

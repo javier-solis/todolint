@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use chrono::Utc;
+use git2::Repository;
 use std::{
     fs::File,
     io::{BufRead, BufReader},
@@ -21,7 +22,21 @@ use walkdir::WalkDir;
 
 fn main() -> Result<()> {
     let path = Path::new("test/one_valid.txt");
-    let analysis_config = AnalysisConfig::default();
+    let repo = Repository::discover(path).unwrap();
+
+    let file_analysis_config = FileAnalysisConfig {
+        repo: Some(&repo),
+        include_files: None,
+    };
+
+    let dir_analysis_config = DirAnalysisConfig {
+        file_analysis_config: file_analysis_config,
+        exclude_dirs: None,
+    };
+
+    let analysis_config = AnalysisConfig::new_from_dir_config(&dir_analysis_config);
+    // let analysis_config = AnalysisConfig::default();
+
     let analysis = analyze_path(&path, &analysis_config)?;
     print_json(&analysis);
 
