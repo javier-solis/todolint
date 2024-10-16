@@ -83,7 +83,7 @@ impl<'fileblamecontext> LineAnalyzer<'fileblamecontext> {
                 line: line_number,
                 line_info: ValidContent {
                     comment: comment_content.to_string(),
-                    delimiters,
+                    delimiters: (!delimiters.is_empty()).then_some(delimiters),
                 },
                 blame_info,
             })))
